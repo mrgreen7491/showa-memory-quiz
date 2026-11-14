@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>昭和の思い出広場 Ver.2.1 - 高齢者向け懐かしのクイズ</title>
+  <meta name="description" content="デイサービスやシニアサロンで楽しめる、昭和の思い出を語り合う温かいクイズアプリ（Ver.2.1）です。高知・四国と全国の懐かしい思い出30問を収録。">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container" id="app">
+    <!-- ヘッダー：見守りスタッフや利用者が状況を把握・調整できるバー -->
+    <header class="app-header">
+      <div class="header-content">
+        <h1 class="logo-title">
+          <span class="logo-badge">昭和レトロ</span>
+          昭和の思い出広場 <span class="version-tag">Ver.2.1</span>
+        </h1>
+        
+        <div class="header-controls">
+          <!-- 効果音のON/OFF切り替え -->
+          <button type="button" id="btnToggleSound" class="btn-tool" aria-pressed="true" aria-label="効果音の切り替え">
+            <span class="tool-icon" id="soundIcon">🔔</span>
+            <span id="soundStatusText">効果音：入</span>
+          </button>
+
+          <!-- 文字サイズ切り替え -->
+          <div class="font-size-switcher" role="group" aria-label="文字の大きさ">
+            <span class="font-label">文字：</span>
+            <button type="button" class="btn-font" data-size="standard" aria-pressed="false">標準</button>
+            <button type="button" class="btn-font active" data-size="large" aria-pressed="true">大</button>
+            <button type="button" class="btn-font" data-size="xlarge" aria-pressed="false">特大</button>
+          </div>
+
+          <!-- 音声・運用設定ドロワーの開閉ボタン -->
+          <button type="button" id="btnToggleSettings" class="btn-tool" aria-expanded="false" aria-controls="voiceSettingsPanel" aria-label="音声・運用設定を開く">
+            <span class="tool-icon">⚙️</span>
+            <span>設定・ガイド</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- スタッフ用 設定・ガイドドロワー（必要なときだけ展開） -->
+      <div id="voiceSettingsPanel" class="settings-drawer" style="display: none;" role="region" aria-label="音声と運用の設定">
+        <div class="settings-row">
+          <div class="settings-item">
+            <label class="settings-label">読み上げの基本運用：</label>
+            <p class="settings-status-desc">
+              🎙️ <strong>スタッフによる肉声読み上げを推奨</strong><br>
+              （音声ボタンを押すと、ふりがな付きの読み原稿が表示されます。AivisSpeech音声ファイルが配置されると自動で再生に切り替わります）
+            </p>
+          </div>
+          <div class="settings-item">
+            <label for="enableBrowserTts" class="settings-label">ブラウザ合成音声（テスト用）：</label>
+            <div class="checkbox-wrapper">
+              <input type="checkbox" id="enableBrowserTts" class="settings-checkbox">
+              <label for="enableBrowserTts" class="checkbox-label">ブラウザ音声を鳴らす（※地名等の読み間違いにご注意ください）</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ領域（1画面内でスムーズに切り替え） -->
+    <main class="main-content" id="mainContent">
+
+      <!-- ================= 1. タイトル画面 ================= -->
+      <section id="titleScreen" class="screen-card active" aria-labelledby="titleHeading">
+        <div class="title-visual">
+          <span class="retro-icon" aria-hidden="true">📻 🌸 📺 🏯</span>
+        </div>
+        <h2 id="titleHeading" class="main-heading">昭和の思い出広場</h2>
+        <p class="sub-heading">さあ、懐かしい昭和の旅に出かけましょう</p>
+
+        <div class="intro-box">
+          <p class="intro-lead">高知・四国のふるさとの風景や、昭和の暮らし・音楽・食べ物のクイズです。<br>全30問の中から、ゆったりとした時間をお楽しみいただけます。</p>
+          <ul class="intro-points">
+            <li>⏳ <strong>時間制限はありません。</strong> ご自分のペースでゆっくりお話ししながらどうぞ。</li>
+            <li>🌸 <strong>間違えても大丈夫！</strong> 正解・不正解を競うのではなく、懐かしい思い出を語り合うことが一番です。</li>
+            <li>🔔 <strong>心地よい効果音付き。</strong> 正解・不正解で優しい音が鳴ります（音を消すこともできます）。</li>
+            <li>📖 <strong>会話を楽しむ設計。</strong> 問いかけや大きな文字で、自然と笑顔と会話が広がります。</li>
+          </ul>
+        </div>
+
+        <div class="action-area">
+          <button type="button" id="btnStart" class="btn btn-primary btn-giant">
+            <span class="btn-icon">🚀</span>
+            <span class="btn-text">クイズをはじめる</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ================= 2. クイズ画面 ================= -->
+      <section id="quizScreen" class="screen-card" style="display: none;" aria-live="polite">
+        <!-- プログレスバー・問題番号 -->
+        <div class="quiz-status-bar">
+          <span class="question-badge" id="questionBadge">第 1 問 / 全 30 問</span>
+          <div class="progress-bar-container" aria-hidden="true">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 3.3%;"></div>
+          </div>
+          <span class="question-genre-badge" id="questionGenreBadge">高知・名所</span>
+        </div>
+
+        <!-- 音声・読み上げボタンバー -->
+        <div class="speech-control-bar">
+          <button type="button" id="btnSpeak" class="btn btn-speech" aria-label="問題文の読み上げ原稿を表示・再生します">
+            <span class="speaker-icon" aria-hidden="true">📖</span>
+            <span id="speechBtnText">問題の読み上げ原稿</span>
+          </button>
+        </div>
+
+        <!-- スタッフ用読み上げ原稿ポップアップカード（ボタンで開閉） -->
+        <div id="scriptGuideBox" class="script-guide-box" style="display: none;" role="dialog" aria-label="スタッフ用読み上げガイド">
+          <div class="guide-header">
+            <span class="guide-title">🎙️ スタッフ読み上げガイド（ルビ付き）</span>
+            <button type="button" id="btnCloseGuide" class="btn-close-guide" aria-label="閉じる">✕</button>
+          </div>
+          <div class="guide-body">
+            <p class="guide-pronunciation" id="guidePronunciation">【読み方注意】はりまや橋（ばし）</p>
+            <p class="guide-text" id="guideText">読み上げ原稿がここに表示されます。</p>
+          </div>
+        </div>
+
+        <!-- 問題文 -->
+        <div class="question-card">
+          <h2 class="question-text" id="questionText">問題文がここに表示されます</h2>
+        </div>
+
+        <!-- 3択の選択肢ボタンエリア -->
+        <div class="choices-container" id="choicesContainer" role="group" aria-label="クイズの回答選択肢">
+          <!-- JSで動的にボタンを生成します -->
+        </div>
+
+        <!-- 回答後の表示（フィードバック & 画像 & 回想コーナー） -->
+        <div class="result-feedback-card" id="resultFeedbackCard" style="display: none;" role="region" aria-label="回答結果と思い出のお話">
+          <!-- 正解・温かいメッセージ -->
+          <div class="feedback-header" id="feedbackHeader">
+            <span class="feedback-icon" id="feedbackIcon">🌸</span>
+            <h3 class="feedback-title" id="feedbackTitle">大正解！すばらしいですね！</h3>
+          </div>
+
+          <!-- 回答後の画像表示領域（画像がある問題のみ表示） -->
+          <div class="result-image-box" id="resultImageBox" style="display: none;">
+            <div class="image-wrapper">
+              <img id="resultImage" src="" alt="思い出の関連画像" class="result-image" />
+            </div>
+            <p class="image-caption" id="imageCaption">昭和歌謡のステージをイメージしたAIイラスト</p>
+          </div>
+
+          <!-- 解説文 -->
+          <div class="explanation-box" id="explanationBox">
+            <p class="explanation-text" id="explanationText">解説がここに表示されます。</p>
+          </div>
+
+          <!-- 回想コーナー（参加者・スタッフの会話を促す問いかけ） -->
+          <div class="reminiscence-card">
+            <div class="reminiscence-header">
+              <span class="reminiscence-tag">🌸 思い出をお話ししてみませんか？</span>
+              <!-- 回想問いかけ専用の音声・原稿ボタン -->
+              <button type="button" id="btnSpeakReminiscence" class="btn btn-reminiscence-speech" aria-label="回想の問いかけ原稿を表示・再生します">
+                <span class="speaker-icon" aria-hidden="true">🗣️</span>
+                <span id="reminiscenceSpeechBtnText">問いかけの言葉</span>
+              </button>
+            </div>
+
+            <!-- ボタンのすぐ下に展開する問いかけ詳細ボックス（画面スクロールなし） -->
+            <div id="reminiscenceGuideBox" class="reminiscence-guide-box" style="display: none;" role="region" aria-label="スタッフ用問いかけガイド">
+              <div class="reminiscence-guide-header">
+                <span class="reminiscence-guide-title">🎙️ スタッフ語りかけガイド（声かけ用）</span>
+                <button type="button" id="btnCloseReminiscenceGuide" class="btn-close-guide" aria-label="閉じる">✕</button>
+              </div>
+              <p class="reminiscence-guide-text" id="reminiscenceGuideText">
+                思い出の問いかけ原稿がここに表示されます。
+              </p>
+            </div>
+
+            <p class="reminiscence-prompt" id="reminiscencePrompt">
+              「皆さんのお宅にも、こんな道具がありましたか？」
+            </p>
+            <p class="reminiscence-hint">
+              💡 お隣の方やスタッフと、当時の思い出をゆっくりおしゃべりしてみてくださいね。自動で画面は進みませんのでご安心ください。
+            </p>
+          </div>
+
+          <!-- 次の問題へボタン -->
+          <div class="next-action-area">
+            <button type="button" id="btnNext" class="btn btn-primary btn-large">
+              <span class="btn-text" id="nextBtnText">次の問題へすすむ</span>
+              <span class="btn-icon">➡</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. 終了画面 ================= -->
+      <section id="endScreen" class="screen-card" style="display: none;" aria-labelledby="endHeading">
+        <div class="title-visual">
+          <span class="retro-icon" aria-hidden="true">🍵 🌸 🏡 🏯</span>
+        </div>
+        <h2 id="endHeading" class="main-heading">昭和の旅、おつかれさまでした</h2>
+        <p class="sub-heading">たくさんの懐かしい思い出に出会えましたね</p>
+
+        <!-- 終了画面用の読み上げボタン -->
+        <div class="speech-control-bar ending-speech-bar">
+          <button type="button" id="btnSpeakEnding" class="btn btn-speech" aria-label="終了メッセージを声で聴く・原稿を確認します">
+            <span class="speaker-icon" aria-hidden="true">📖</span>
+            <span id="endingSpeechBtnText">終了の言葉</span>
+          </button>
+        </div>
+
+        <div class="ending-message-box">
+          <p class="ending-lead">ご参加いただき、心からありがとうございました。</p>
+          <div class="ending-body" id="endingBodyText">
+            <p>高知や四国の懐かしい風景、昭和の暮らしやごちそう、家族やお友達と過ごした温かい記憶がたくさんよみがえってきましたね。</p>
+            <p>今日お話しいただいた一つひとつの思い出や笑顔は、かけがえのない大切な宝物です。</p>
+            <p>これからも、皆さんと一緒に楽しいお話をたくさんできることを楽しみにしています！</p>
+          </div>
+          <div class="tea-break-box">
+            <span class="tea-icon">🍵</span>
+            <span>ここで一息、温かいお茶でも召し上がりながら、皆さんと今日の余韻をお楽しみください。</span>
+          </div>
+        </div>
+
+        <div class="action-area">
+          <button type="button" id="btnRestart" class="btn btn-secondary btn-giant">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text">もういちど最初から遊ぶ</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="app-footer">
+      <p class="footer-text">昭和の思い出広場 (Ver.2.1) — 高知県内デイサービス・シニアサロン向けレクリエーション</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

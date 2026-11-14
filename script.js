@@ -1,0 +1,1358 @@
+/**
+ * 昭和の思い出広場 (Ver.2.1)
+ * 高齢者向けレクリエーション アプリケーションスクリプト
+ * 
+ * 主な改善点：
+ * 1. 3択の正解位置を①②③に均等分散（各10回ずつ）
+ * 2. 全30問の画像情報（題材・ファイル名・プロンプト）の完全構造化
+ * 3. AivisSpeech等の高品質事前生成音声に対応した再生ロジック
+ * 4. 音声ファイル未配置時はスタッフによる肉声読み上げガイド（ルビ付き）を優先表示
+ * 5. Web Audio APIによる優しい効果音（ピンポーン／ぽ〜ん）
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ==========================================
+  // 1. クイズデータ（全30問 完全版）
+  // ==========================================
+  const quizData = [
+  {
+    "id": 1,
+    "genre": "高知・名所",
+    "question": "よさこい節の歌にも登場する、「坊さんかんざし買うを見た」のフレーズで全国的にも有名な高知市の名所といえば？",
+    "choices": [
+      "めがね橋",
+      "はりまや橋",
+      "錦帯橋（きんたいきょう）"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "はりまや橋",
+    "explanation": "正解は「はりまや橋」です！竹林寺の僧・純信とお馬の恋物語として、よさこい節とともに今も多くの人に親しまれています。",
+    "reminiscence": "昔、はりまや橋のあたりでお買い物や待ち合わせをした思い出はありますか？",
+    "image": "images/q01_harimayabashi.jpg",
+    "imageCaption": "昭和レトロな街並みと朱塗りの「はりまや橋」のイラスト",
+    "imagePrompt": "Showa retro style watercolor illustration of Harimayabashi bridge in Kochi Japan, vermilion curved bridge with willows, nostalgic 1960s atmosphere, warm colors, daylight",
+    "audioFiles": {
+      "question": "audio/q01_question.wav",
+      "reminiscence": "audio/q01_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "はりまや橋（ばし）、竹林寺（ちくりんじ）、純信（じゅんしん）、お馬（おうま）",
+      "questionScript": "第1問。ジャンルは、高知の名所。よさこい節の歌にも登場する、「坊さんかんざし買うを見た」のフレーズで全国的にも有名な、高知市の名所といえば？……選択肢は、1番、めがね橋。2番、はりまや橋。3番、きんたいきょう、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔、はりまや橋のあたりでお買い物や待ち合わせをした思い出はありますか？……どうぞ、周りの方やスタッフと、当時の思い出をゆっくりお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 2,
+    "genre": "高知・お城",
+    "question": "山内一豊（やまうちかつとよ）公が築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している高知のシンボルといえば？",
+    "choices": [
+      "松山城",
+      "丸亀城",
+      "高知城（鷹城）"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "高知城（鷹城）",
+    "explanation": "正解は「高知城」です！追手門と天守閣を一枚の写真に一緒に収めることができる、全国的にも大変貴重なお城です。",
+    "reminiscence": "高知城のお祭りやお花見に、ご家族やお友達とお出かけされたことはありますか？",
+    "image": "images/q02_kochijo.jpg",
+    "imageCaption": "青空に映える木造の美しい「高知城」天守閣と追手門",
+    "imagePrompt": "A nostalgic retro watercolor illustration of Kochi Castle (Kochi-jo) keep and Otemon gate in Japan, traditional Japanese castle architecture, blue sky, blooming cherry blossoms, gentle warm tones, 1960s Showa style",
+    "audioFiles": {
+      "question": "audio/q02_question.wav",
+      "reminiscence": "audio/q02_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "高知城（こうちじょう）、山内一豊（やまうち かつとよ）、追手門（おうてもん）",
+      "questionScript": "第2問。ジャンルは、高知のお城。やまうちかつとよ公が築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している、高知のシンボルといえば？……選択肢は、1番、松山城。2番、丸亀城。3番、高知城、です。",
+      "reminiscenceScript": "思い出の問いかけです。……高知城のお祭りやお花見に、ご家族やお友達とお出かけされたことはありますか？……どうぞ、昔の楽しい思い出をゆっくりお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 3,
+    "genre": "高知・街の風景",
+    "question": "江戸時代から300年以上続き、追手筋（おうてすじ）にたくさんのお店が立ち並び、新鮮な野菜やお花、名物の「いも天」が並ぶ定期市といえば？",
+    "choices": [
+      "日曜市（にちよういち）",
+      "朝市",
+      "蚤の市（のみのいち）"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "日曜市（にちよういち）",
+    "explanation": "正解は「日曜市」です！全長およそ1キロメートルにわたって店が連なる、日本最大級の歴史ある街路市ですね。",
+    "reminiscence": "日曜市で買った美味しいものや、お店のおじちゃん・おばちゃんとの楽しい会話の思い出はありますか？",
+    "image": "images/q03_nichiyoichi.jpg",
+    "imageCaption": "追手筋に白いテントが連なり賑わう「日曜市」の風景",
+    "imagePrompt": "Nostalgic Showa era open-air street market in Kochi Japan, Nichiyo-ichi Sunday market, white sunshades along street with castle in background, lively elderly people and vendors selling vegetables and fried sweet potato tempura, warm watercolor art",
+    "audioFiles": {
+      "question": "audio/q03_question.wav",
+      "reminiscence": "audio/q03_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "日曜市（にちよういち）、追手筋（おうてすじ）、いも天（いもてん）",
+      "questionScript": "第3問。ジャンルは、高知の街の風景。江戸時代から300年以上続き、おうてすじにたくさんのお店が立ち並び、新鮮な野菜やお花、名物のいも天が並ぶ定期市といえば？……選択肢は、1番、日曜市。2番、朝市。3番、蚤の市、です。",
+      "reminiscenceScript": "思い出の問いかけです。……日曜市で買った美味しいものや、お店のおじちゃん・おばちゃんとの楽しい会話の思い出はありますか？……どうぞ、思い出してみてくださいね。"
+    }
+  },
+  {
+    "id": 4,
+    "genre": "高知・伝統祭り",
+    "question": "昭和29年に高知の商業復興と市民の元気を願って始まり、両手に持った「鳴子（なるこ）」を鳴らしながら華やかに踊る夏の風物詩は？",
+    "choices": [
+      "阿波おどり",
+      "よさこい祭り",
+      "新居浜太鼓祭り"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "よさこい祭り",
+    "explanation": "正解は「よさこい祭り」です！昭和の時代から年々工夫を重ね、今では全国や世界中にその熱気が広まっています。",
+    "reminiscence": "昔のよさこい祭りを見に行ったり、ご自身やお子さんが鳴子を鳴らして踊った思い出はありますか？",
+    "image": "images/q04_yosakoi.jpg",
+    "imageCaption": "色鮮やかなハッピと木製の鳴子で華やかに踊る「よさこい祭り」",
+    "imagePrompt": "Retro 1960s Showa illustration of Kochi Yosakoi festival dancers, vibrant traditional happi coats, holding wooden naruko clappers, energetic smiling people dancing on street, festive summer mood, nostalgic warm color palette",
+    "audioFiles": {
+      "question": "audio/q04_question.wav",
+      "reminiscence": "audio/q04_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "よさこい祭り（まつり）、鳴子（なるこ）、商業復興（しょうぎょう ふっこう）",
+      "questionScript": "第4問。ジャンルは、高知の伝統祭り。昭和29年に高知の商業復興と市民の元気を願って始まり、両手に持った、なるこ、を鳴らしながら華やかに踊る夏の風物詩は？……選択肢は、1番、阿波おどり。2番、よさこい祭り。3番、新居浜太鼓祭り、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔のよさこい祭りを見に行ったり、ご自身やお子さんが鳴子を鳴らして踊った思い出はありますか？……どうぞ、楽しくお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 5,
+    "genre": "高知・名勝海岸",
+    "question": "「月の名所は桂浜」と唄われ、雄大な太平洋をじっと見つめる大きな「坂本龍馬像」が立っている有名な海岸は？",
+    "choices": [
+      "室戸岬（むろとみさき）",
+      "足摺岬（あしずりみさき）",
+      "桂浜（かつらはま）"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "桂浜（かつらはま）",
+    "explanation": "正解は「桂浜」です！弓状に広がる白砂青松の美しい浜辺で、昭和3年に建立された龍馬像が堂々と立っています。",
+    "reminiscence": "桂浜の潮風や波の音を聞きながら、ご家族や大切な方と過ごした思い出はありますか？",
+    "image": "images/q05_katsurahama.jpg",
+    "imageCaption": "太平洋の波音と白砂青松、高台に立つ「坂本龍馬像」と桂浜",
+    "imagePrompt": "Scenic retro watercolor illustration of Katsurahama beach in Kochi Japan, majestic bronze statue of Sakamoto Ryoma gazing at the Pacific ocean, pine trees, sandy beach with rolling waves, nostalgic Showa era travel postcard aesthetic",
+    "audioFiles": {
+      "question": "audio/q05_question.wav",
+      "reminiscence": "audio/q05_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "桂浜（かつらはま）、白砂青松（はくしゃせいしょう）、坂本龍馬像（さかもとりょうまぞう）",
+      "questionScript": "第5問。ジャンルは、高知の名勝海岸。「月の名所は桂浜」と唄われ、雄大な太平洋をじっと見つめる大きな、さかもとりょうま像、が立っている有名な海岸は？……選択肢は、1番、室戸岬。2番、足摺岬。3番、桂浜、です。",
+      "reminiscenceScript": "思い出の問いかけです。……桂浜の潮風や波の音を聞きながら、ご家族や大切な方と過ごした思い出はありますか？……どうぞ、ゆっくり思い出してみてくださいね。"
+    }
+  },
+  {
+    "id": 6,
+    "genre": "昭和歌謡・名曲",
+    "question": "昭和を代表する歌姫・美空ひばりさんの大ヒット曲で、昭和27年の松竹映画の主題歌にもなった、果物の名前がつく名曲は？",
+    "choices": [
+      "リンゴ追分（おいわけ）",
+      "瀬戸の花嫁",
+      "青い山脈"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "リンゴ追分（おいわけ）",
+    "explanation": "正解は「リンゴ追分」です！「リンゴの花びらが〜」の切なく美しい歌声は、昭和の日本中に響き渡り、人々の心を癒やしました。",
+    "reminiscence": "美空ひばりさんや昔の歌手で、ラジオやレコードでよく聴いたり口ずさんだ大好きな歌はありますか？",
+    "image": "images/showa-kayo-singer.png",
+    "imageCaption": "昭和歌謡のステージをイメージしたAIイラスト",
+    "imagePrompt": "Showa retro stage singer singing with vintage microphone, theater curtains, elegant dress, warm spotlight, 1950s aesthetic",
+    "audioFiles": {
+      "question": "audio/q06_question.wav",
+      "reminiscence": "audio/q06_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "美空ひばり（みそら ひばり）、リンゴ追分（おいわけ）、松竹（しょうちく）",
+      "questionScript": "第6問。ジャンルは、昭和歌謡・名曲。昭和を代表する歌姫・みそらひばりさんの大ヒット曲で、昭和27年の映画の主題歌にもなった、果物の名前がつく名曲は？……選択肢は、1番、リンゴ追分。2番、瀬戸の花嫁。3番、青い山脈、です。",
+      "reminiscenceScript": "思い出の問いかけです。……美空ひばりさんや昔の歌手で、ラジオやレコードでよく聴いたり口ずさんだ大好きな歌はありますか？……どうぞ、懐かしい歌の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 7,
+    "genre": "高知・歴史の英雄",
+    "question": "土佐藩出身で、海援隊を結成して薩長同盟を結ぶなど、明治維新の大きな原動力となった、土佐を代表する幕末の志士は誰でしょう？",
+    "choices": [
+      "板垣退助",
+      "中岡慎太郎",
+      "坂本龍馬"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "坂本龍馬",
+    "explanation": "正解は「坂本龍馬」です！自由な発想と行動力で日本中を駆け巡り、今も高知県民をはじめ全国から熱く愛されています。",
+    "reminiscence": "龍馬さんのように、子どもの頃や若い頃に憧れた歴史の人物や物語はありますか？",
+    "image": "images/q07_ryoma.png",
+    "imageCaption": "懐に手を入れて未来を見つめる、土佐の英雄「坂本龍馬」の肖像",
+    "imagePrompt": "Portrait of Sakamoto Ryoma in warm retro ink and watercolor illustration style, traditional Japanese samurai hakama with western leather boots, hand inside kimono robe, charismatic gentle smile, nostalgic sepia and soft colors",
+    "audioFiles": {
+      "question": "audio/q07_question.wav",
+      "reminiscence": "audio/q07_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "坂本龍馬（さかもと りょうま）、海援隊（かいえんたい）、薩長同盟（さっちょう どうめい）",
+      "questionScript": "第7問。ジャンルは、高知・歴史の英雄。土佐藩出身で、かいえんたいを結成してさっちょうどうめいを結ぶなど、明治維新の原動力となった、土佐を代表する志士は誰でしょう？……選択肢は、1番、板垣退助。2番、中岡慎太郎。3番、坂本龍馬、です。",
+      "reminiscenceScript": "思い出の問いかけです。……龍馬さんのように、子どもの頃や若い頃に憧れた歴史の人物や物語はありますか？……どうぞ、思い出してみてくださいね。"
+    }
+  },
+  {
+    "id": 8,
+    "genre": "高知・清流",
+    "question": "「日本最後の清流」とも呼ばれ、川が増水した時に水面下に沈むように欄干（手すり）をなくした「沈下橋（ちんかばし）」で有名な川は？",
+    "choices": [
+      "仁淀川（によどがわ）",
+      "四万十川（しまんとがわ）",
+      "吉野川"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "四万十川（しまんとがわ）",
+    "explanation": "正解は「四万十川」です！雄大な大自然の中、青い川面と沈下橋が織りなす風景は、高知の原風景として親しまれています。",
+    "reminiscence": "子どもの頃、川で泳いだり、鮎や川エビを捕まえたりした夏の思い出はありますか？",
+    "image": "images/q08_shimantogawa.png",
+    "imageCaption": "緑の山々と澄んだ青い川、素朴な「沈下橋」が架かる四万十川",
+    "imagePrompt": "Peaceful nostalgic Japanese countryside landscape of Shimanto River in Kochi, low-water chinkabashi submersible bridge crossing clear river, lush green mountains, someone walking with a bicycle, warm summer breeze, Showa watercolor painting",
+    "audioFiles": {
+      "question": "audio/q08_question.wav",
+      "reminiscence": "audio/q08_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "四万十川（しまんとがわ）、沈下橋（ちんかばし）、仁淀川（によどがわ）",
+      "questionScript": "第8問。ジャンルは、高知の清流。「日本最後の清流」とも呼ばれ、川が増水した時に水面下に沈むように欄干をなくした、ちんかばし、で有名な川は？……選択肢は、1番、仁淀川。2番、四万十川。3番、吉野川、です。",
+      "reminiscenceScript": "思い出の問いかけです。……子どもの頃、川で泳いだり、鮎や川エビを捕まえたりした夏の思い出はありますか？……どうぞ、懐かしい川遊びの思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 9,
+    "genre": "高知・郷土の味",
+    "question": "高知のお祝いや宴会「おきゃく」に欠かせない、大きな大皿にカツオのタタキ、組物、お寿司などを豪快に盛り付ける伝統料理といえば？",
+    "choices": [
+      "皿鉢（さわち）料理",
+      "しっぽく料理",
+      "会席料理"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "皿鉢（さわち）料理",
+    "explanation": "正解は「皿鉢料理」です！主婦が台所にこもらず、みんなと一緒にゆっくり宴会を楽しめるようにという思いやりから発展したとも言われています。",
+    "reminiscence": "お正月やお祝いの席で、みんなと大皿を囲んで食べたごちそうの中で何が一番好きでしたか？",
+    "image": "images/q09_sawachi.png",
+    "imageCaption": "カツオのたたきや組物が豪華に盛られた高知名物「皿鉢料理」",
+    "imagePrompt": "Sumptuous traditional Kochi Sawachi ryori banquet platter, huge decorative ceramic plate heaped with seared bonito katsuo tataki, sushi rolls, sea bream, and festive appetizers, warm tatami room setting, retro Showa gourmet illustration",
+    "audioFiles": {
+      "question": "audio/q09_question.wav",
+      "reminiscence": "audio/q09_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "皿鉢料理（さわち りょうり）、おきゃく、カツオのタタキ",
+      "questionScript": "第9問。ジャンルは、高知の郷土の味。高知のお祝いや宴会「おきゃく」に欠かせない、大きな大皿にカツオのタタキやお寿司などを豪快に盛り付ける伝統料理といえば？……選択肢は、1番、皿鉢料理。2番、しっぽく料理。3番、会席料理、です。",
+      "reminiscenceScript": "思い出の問いかけです。……お正月やお祝いの席で、みんなと大皿を囲んで食べたごちそうの中で何が一番好きでしたか？……どうぞ、思い出のごちそうのお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 10,
+    "genre": "高知・懐かしの味",
+    "question": "昭和30年代、高知市のパン屋さんがメロンパンを作ろうとして偶然生まれた、丸いパンの周りに甘いカステラ生地のツバがついた名物パンは？",
+    "choices": [
+      "コッペパン",
+      "あんパン",
+      "ぼうしパン"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "ぼうしパン",
+    "explanation": "正解は「ぼうしパン」です！生地がこぼれて偶然麦わら帽子の形になったことから誕生し、今や高知のソウルフードになりました。",
+    "reminiscence": "ぼうしパンの外側の甘くてカリカリした「つば（フチ）」の部分、先にちぎって食べた思い出はありませんか？",
+    "image": "images/q10_boushipan.jpg",
+    "imageCaption": "麦わら帽子の形と甘いカステラのフチが美味しい高知名物「ぼうしパン」",
+    "imagePrompt": "Cute retro bakery illustration of Kochi's famous Boushi-pan hat bread, golden-brown sweet bun shaped like a straw hat with a crispy castella rim, old-fashioned Japanese bakery showcase, warm cozy nostalgic atmosphere",
+    "audioFiles": {
+      "question": "audio/q10_question.wav",
+      "reminiscence": "audio/q10_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "ぼうしパン、カステラ生地（きじ）、麦わら帽子（むぎわらぼうし）",
+      "questionScript": "第10問。ジャンルは、高知の懐かしの味。昭和30年代、高知市のパン屋さんがメロンパンを作ろうとして偶然生まれた、丸いパンの周りに甘いカステラ生地のツバがついた名物パンは？……選択肢は、1番、コッペパン。2番、あんパン。3番、ぼうしパン、です。",
+      "reminiscenceScript": "思い出の問いかけです。……ぼうしパンの外側の甘くてカリカリした「つば」の部分、先にちぎって食べた思い出はありませんか？……どうぞ、笑いながらお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 11,
+    "genre": "高知・路面電車",
+    "question": "高知の街を明治37年から今も走り続け、現役の路面電車としては日本一の営業距離を誇る、ゴトゴトと懐かしい音の乗り物は？",
+    "choices": [
+      "モノレール",
+      "とさでん交通（路面電車）",
+      "ケーブルカー"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "とさでん交通（路面電車）",
+    "explanation": "正解は「とさでん交通（路面電車）」です！伊野から後免、桟橋まで、高知の人々の日常の足として長く親しまれています。",
+    "reminiscence": "路面電車やバスに乗って、ご家族やお友達とお買い物に出かけた楽しい思い出はありますか？",
+    "image": "images/q11_tosaden.png",
+    "imageCaption": "緑とクリーム色のレトロな車体が街をコトコト走る「とさでん交通」",
+    "imagePrompt": "Classic vintage streetcar tram of Tosaden running on Kochi city streets, green and cream vintage tramcar, nostalgic Showa era townscape with shop signs, passengers waiting at platform, gentle retro watercolor art",
+    "audioFiles": {
+      "question": "audio/q11_question.wav",
+      "reminiscence": "audio/q11_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "とさでん交通（こうつう）、路面電車（ろめんでんしゃ）、後免（ごめん）、伊野（いの）",
+      "questionScript": "第11問。ジャンルは、高知の路面電車。高知の街を明治37年から今も走り続け、現役の路面電車としては日本一の営業距離を誇る、ゴトゴトと懐かしい音の乗り物は？……選択肢は、1番、モノレール。2番、とさでん交通、路面電車。3番、ケーブルカー、です。",
+      "reminiscenceScript": "思い出の問いかけです。……路面電車やバスに乗って、ご家族やお友達とお買い物に出かけた楽しい思い出はありますか？……どうぞ、思い出してみてくださいね。"
+    }
+  },
+  {
+    "id": 12,
+    "genre": "四国・徳島の伝統",
+    "question": "「踊る阿呆に見る阿呆、同じ阿呆なら踊らにゃ損々」の元気な掛け声で知られる、徳島県を代表する夏の伝統芸能といえば？",
+    "choices": [
+      "阿波おどり",
+      "花笠音頭",
+      "ソーラン節"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "阿波おどり",
+    "explanation": "正解は「阿波おどり」です！400年以上の歴史を持ち、ぞめきのリズムに乗せて街中が熱気に包まれます。",
+    "reminiscence": "三味線や鉦（かね）、太鼓のお囃子（はやし）を聞くと、自然と手拍子したくなりませんか？",
+    "image": "images/q12_awaodori.png",
+    "imageCaption": "編笠の女踊りと提灯明かりの下で躍動する徳島「阿波おどり」",
+    "imagePrompt": "Festive illustration of Tokushima Awa Odori dancers in Showa era, female dancers wearing woven amigasa hats and yukata dancing gracefully, paper lanterns glowing at night, vibrant energetic festival mood, retro Japanese woodblock inspired watercolor",
+    "audioFiles": {
+      "question": "audio/q12_question.wav",
+      "reminiscence": "audio/q12_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "阿波おどり（あわおどり）、阿呆（あほう）、ぞめき、鉦（かね）",
+      "questionScript": "第12問。ジャンルは、四国・徳島の伝統。「踊る阿呆に見る阿呆、同じ阿呆なら踊らにゃ損々」の元気な掛け声で知られる、徳島県を代表する夏の伝統芸能といえば？……選択肢は、1番、阿波おどり。2番、花笠音頭。3番、ソーラン節、です。",
+      "reminiscenceScript": "思い出の問いかけです。……三味線や太鼓のお囃子を聞くと、自然と手拍子したくなりませんか？……どうぞ、お祭りの思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 13,
+    "genre": "四国・香川の名物",
+    "question": "強いコシと滑らかな喉ごしが特徴で、弘法大師（空海）が唐から製法を伝えたとも言われる、香川県（讃岐）を代表する名物麺は？",
+    "choices": [
+      "祖谷（いや）そば",
+      "讃岐うどん",
+      "そうめん"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "讃岐うどん",
+    "explanation": "正解は「讃岐うどん」です！いりこ出汁の豊かな香りとしっかりした麺は、四国のみならず日本全国で愛されています。",
+    "reminiscence": "昔、おうちで小麦粉をこねて、手打ちでうどんを作った思い出はありますか？",
+    "image": "images/q13_sanukiudon.png",
+    "imageCaption": "澄んだいりこ出汁にツヤツヤと輝くコシの強い香川の「讃岐うどん」",
+    "imagePrompt": "Mouthwatering nostalgic illustration of a bowl of Sanuki udon noodles in Kagawa, thick chewy white noodles in clear golden dashi broth, green onions and grated ginger, rustic ceramic bowl on wooden table, warm comforting Showa vibe",
+    "audioFiles": {
+      "question": "audio/q13_question.wav",
+      "reminiscence": "audio/q13_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "讃岐うどん（さぬき うどん）、弘法大師（こうぼうだいし）、空海（くうかい）、祖谷（いや）",
+      "questionScript": "第13問。ジャンルは、四国・香川の名物。強いコシと滑らかな喉ごしが特徴で、弘法大師・空海が伝えたとも言われる、香川県を代表する名物麺は？……選択肢は、1番、祖谷そば。2番、讃岐うどん。3番、そうめん、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔、おうちで小麦粉をこねて、手打ちでうどんを作った思い出はありますか？……どうぞ、おうちの味の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 14,
+    "genre": "四国・愛媛の名湯",
+    "question": "日本最古の温泉の一つといわれ、夏目漱石の小説『坊っちゃん』の舞台にもなった、愛媛県松山市にある木造三層楼の有名な温泉は？",
+    "choices": [
+      "道後温泉（どうごおんせん）",
+      "別府温泉",
+      "有馬温泉"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "道後温泉（どうごおんせん）",
+    "explanation": "正解は「道後温泉」です！本館のてっぺんにある「振鷺閣（しんろかく）」の太鼓の音が響く、風情あふれる名湯です。",
+    "reminiscence": "昔行った温泉旅行や、近所の銭湯で湯船に浸かって温まった思い出はありますか？",
+    "image": "images/q14_dogoonsen.png",
+    "imageCaption": "歴史ある木造三層楼と振鷺閣がそびえる名湯「道後温泉本館」",
+    "imagePrompt": "Nostalgic retro illustration of historic Dogo Onsen Honkan bathhouse in Ehime Matsuyama, multi-story wooden traditional bathhouse architecture, Shinrokaku tower on roof, people in yukata strolling with towels, dusk lighting, warm Showa postcard style",
+    "audioFiles": {
+      "question": "audio/q14_question.wav",
+      "reminiscence": "audio/q14_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "道後温泉（どうご おんせん）、夏目漱石（なつめ そうせき）、振鷺閣（しんろかく）",
+      "questionScript": "第14問。ジャンルは、四国・愛媛の名湯。日本最古の温泉の一つといわれ、夏目漱石の小説『坊っちゃん』の舞台にもなった、松山市にある有名な温泉は？……選択肢は、1番、道後温泉。2番、別府温泉。3番、有馬温泉、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔行った温泉旅行や、近所の銭湯で湯船に浸かって温まった思い出はありますか？……どうぞ、温かいお風呂の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 15,
+    "genre": "高知・ふるさとの果物",
+    "question": "高知の早春から初夏にかけて出回り、皮をむくと爽やかで芳醇な香りが部屋中に広がる、大玉の黄色い柑橘といえば？",
+    "choices": [
+      "温州みかん",
+      "リンゴ",
+      "土佐文旦（ぶんたん）"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "土佐文旦（ぶんたん）",
+    "explanation": "正解は「土佐文旦」です！厚い皮をナイフでむいて、プリッとした実を一房ずつ味わう時間は、土佐の春の大きな楽しみですね。",
+    "reminiscence": "家族みんなでコタツや縁側に集まり、果物をむいて分け合って食べた団らんの思い出はありますか？",
+    "image": "images/q15_buntan.png",
+    "imageCaption": "春の光が差し込む縁側と、爽やかな香りが広がる黄色い「土佐文旦」",
+    "imagePrompt": "Still life retro watercolor of ripe Tosa Buntan citrus fruit in Kochi, large yellow pomelo fruit in bamboo basket, some peeled showing translucent juicy segments, sitting on engawa veranda in spring sunlight, nostalgic warmth",
+    "audioFiles": {
+      "question": "audio/q15_question.wav",
+      "reminiscence": "audio/q15_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "土佐文旦（とさ ぶんたん）、柑橘（かんきつ）、芳醇（ほうじゅん）",
+      "questionScript": "第15問。ジャンルは、高知のふるさとの果物。高知の早春から初夏にかけて出回り、皮をむくと爽やかな香りが広がる、大玉の黄色い柑橘といえば？……選択肢は、1番、温州みかん。2番、リンゴ。3番、土佐文旦、です。",
+      "reminiscenceScript": "思い出の問いかけです。……家族みんなでコタツや縁側に集まり、果物をむいて分け合って食べた団らんの思い出はありますか？……どうぞ、懐かしいご家族の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 16,
+    "genre": "昭和家電・暮らし",
+    "question": "昭和30年代に普及し、「三種の神器（じんぎ）」と呼ばれた憧れの生活家電は、「電気洗濯機」「白黒テレビ」と、もう一つは何でしょう？",
+    "choices": [
+      "電気冷蔵庫",
+      "電子レンジ",
+      "エアコン（クーラー）"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "電気冷蔵庫",
+    "explanation": "正解は「電気冷蔵庫」です！それまでは氷屋さんから氷の塊を買って冷やす木製冷蔵庫が主流でした。",
+    "reminiscence": "皆さんのお宅に初めて電気冷蔵庫や洗濯機がやって来た日のこと、覚えていますか？",
+    "image": "images/q16_reizo-ko.png",
+    "imageCaption": "昭和30年代の丸みを帯びた憧れの白い「電気冷蔵庫」と台所の風景",
+    "imagePrompt": "Vintage 1950s Showa kitchen with a round-edged white electric refrigerator, silver latch handle, happy family opening it to take out chilled watermelon, nostalgic Japanese dining room, warm retro illustration",
+    "audioFiles": {
+      "question": "audio/q16_question.wav",
+      "reminiscence": "audio/q16_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "三種の神器（さんしゅの じんぎ）、電気冷蔵庫（でんき れいぞうこ）",
+      "questionScript": "第16問。ジャンルは、昭和家電・暮らし。昭和30年代に普及し、「三種の神器」と呼ばれた憧れの家電は、「電気洗濯機」「白黒テレビ」と、もう一つは何でしょう？……選択肢は、1番、電気冷蔵庫。2番、電子レンジ。3番、エアコン、です。",
+      "reminiscenceScript": "思い出の問いかけです。……皆さんのお宅に初めて電気冷蔵庫や洗濯機がやって来た日のこと、覚えていますか？……どうぞ、当時の驚きや喜びをお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 17,
+    "genre": "懐かしのおやつ",
+    "question": "昔、夏になると氷水でキリッと冷やして飲んだ、ガラス瓶の中にビー玉が入ったシュワシュワする懐かしい飲み物といえば？",
+    "choices": [
+      "サイダー",
+      "麦茶",
+      "ラムネ"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "ラムネ",
+    "explanation": "正解は「ラムネ」です！緑色のガラス瓶のくぼみでビー玉を押さえながら、上手に飲むのがコツでしたね。",
+    "reminiscence": "飲み終わった後に、中のビー玉をなんとかして取り出そうと工夫した思い出はありませんか？",
+    "image": "images/q17_ramune.png",
+    "imageCaption": "氷水でキリッと冷やされた、ビー玉の入った懐かしいガラス瓶の「ラムネ」",
+    "imagePrompt": "Refreshing Showa summer illustration of glass Codd-neck Ramune bottle with marble inside, floating in galvanized tub filled with clear cold water and ice blocks, water droplets on bottle, wooden veranda background, nostalgic summer heat",
+    "audioFiles": {
+      "question": "audio/q17_question.wav",
+      "reminiscence": "audio/q17_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "ラムネ、ビー玉（びーだま）、硝子瓶（がらすびん）",
+      "questionScript": "第17問。ジャンルは、懐かしのおやつ。昔、夏になると氷水で冷やして飲んだ、ガラス瓶の中にビー玉が入ったシュワシュワする懐かしい飲み物といえば？……選択肢は、1番、サイダー。2番、麦茶。3番、ラムネ、です。",
+      "reminiscenceScript": "思い出の問いかけです。……飲み終わった後に、中のビー玉をなんとかして取り出そうと工夫した思い出はありませんか？……どうぞ、子どもの頃の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 18,
+    "genre": "子どもの外遊び",
+    "question": "地面にろう石（白石）で丸や四角のマスを描いて、片足や両足でトントンと跳びながら進む、昔懐かしい外遊びは何でしょう？",
+    "choices": [
+      "かくれんぼ",
+      "けんけんぱ",
+      "だるまさんがころんだ"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "けんけんぱ",
+    "explanation": "正解は「けんけんぱ」です！路地や神社の境内、校庭など、どこでも子どもたちの元気な声が響いていました。",
+    "reminiscence": "子どもの頃、日が暮れるまで夢中になって遊んだお気に入りの外遊びは何ですか？",
+    "image": "images/q18_kenkenpa.png",
+    "imageCaption": "夕暮れの路地で地面に石でマスを描いて跳ぶ元気な「けんけんぱ」",
+    "imagePrompt": "Nostalgic 1960s scene of Japanese children playing hopscotch (ken-ken-pa) on dirt lane, white chalk circles drawn on ground, children wearing retro clothes hopping happily, neighborhood alleys with wooden houses, gentle sunset glow",
+    "audioFiles": {
+      "question": "audio/q18_question.wav",
+      "reminiscence": "audio/q18_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "けんけんぱ、ろう石（ろうせき）、外遊び（そとあそび）",
+      "questionScript": "第18問。ジャンルは、子どもの外遊び。地面にろう石で丸や四角のマスを描いて、片足や両足で跳びながら進む、昔懐かしい外遊びは何でしょう？……選択肢は、1番、かくれんぼ。2番、けんけんぱ。3番、だるまさんがころんだ、です。",
+      "reminiscenceScript": "思い出の問いかけです。……子どもの頃、日が暮れるまで夢中になって遊んだお気に入りの外遊びは何ですか？……どうぞ、元気に遊んだ頃のお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 19,
+    "genre": "昭和テレビ・ヒーロー",
+    "question": "昭和40年代、赤いマフラーを風になびかせてオートバイに乗り、「変身！」のポーズで社会現象を巻き起こした正義の味方は？",
+    "choices": [
+      "月光仮面",
+      "ウルトラマン",
+      "仮面ライダー"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "仮面ライダー",
+    "explanation": "正解は「仮面ライダー」です！お菓子の「仮面ライダースナック」に付いていたカード集めも大ブームになりました。",
+    "reminiscence": "お子さんやお孫さんと一緒にテレビのヒーロー番組やアニメを見た思い出はありますか？",
+    "image": "images/q19_kamenrider.png",
+    "imageCaption": "赤いマフラーを風になびかせバイクで駆ける正義の味方「仮面ライダー」",
+    "imagePrompt": "Retro 1970s Japanese tokusatsu hero with grasshopper mask and red scarf fluttering in the wind, riding a futuristic motorcycle on coastal road, dramatic hero pose, vintage Showa manga and TV art style",
+    "audioFiles": {
+      "question": "audio/q19_question.wav",
+      "reminiscence": "audio/q19_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "仮面ライダー（かめんらいだー）、変身（へんしん）、月光仮面（げっこうかめん）",
+      "questionScript": "第19問。ジャンルは、昭和テレビ・ヒーロー。昭和40年代、赤いマフラーをなびかせてバイクに乗り、「変身！」のポーズで大ブームを巻き起こした正義の味方は？……選択肢は、1番、月光仮面。2番、ウルトラマン。3番、仮面ライダー、です。",
+      "reminiscenceScript": "思い出の問いかけです。……お子さんやお孫さんと一緒にテレビのヒーロー番組やアニメを見た思い出はありますか？……どうぞ、懐かしいテレビのお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 20,
+    "genre": "懐かしの学校給食",
+    "question": "昔の学校給食で大人気だった、コッペパンを油でサッと揚げて、お砂糖やきな粉をたっぷりまぶした甘くて香ばしいパンといえば？",
+    "choices": [
+      "あげパン",
+      "あんパン",
+      "メロンパン"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "あげパン",
+    "explanation": "正解は「あげパン」です！口の周りにお砂糖をつけながら食べた、給食の日が待ち遠しくなる特別なメニューでした。",
+    "reminiscence": "学校給食で好きだったメニューや、お母さんが作ってくれたお弁当のおかずは何ですか？",
+    "image": "images/q20_agepan.png",
+    "imageCaption": "アルマイトの食器に載ったお砂糖たっぷりの甘い「あげパン」と給食",
+    "imagePrompt": "Classic nostalgic Japanese school lunch from Showa era, golden fried bread (age-pan) coated with sugar on an aluminum tray, triangle milk carton, wooden school desk in sunlit classroom, warm nostalgic memories",
+    "audioFiles": {
+      "question": "audio/q20_question.wav",
+      "reminiscence": "audio/q20_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "あげパン、コッペパン、給食（きゅうしょく）",
+      "questionScript": "第20問。ジャンルは、懐かしの学校給食。昔の学校給食で大人気だった、コッペパンを油で揚げて、お砂糖やきな粉をまぶした甘いパンといえば？……選択肢は、1番、あげパン。2番、あんパン。3番、メロンパン、です。",
+      "reminiscenceScript": "思い出の問いかけです。……学校給食で好きだったメニューや、お母さんが作ってくれたお弁当のおかずは何ですか？……どうぞ、懐かしいお味の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 21,
+    "genre": "昭和の暖房・道具",
+    "question": "寒い冬の夜、熱いお湯を入れて厚手の布袋で包み、お布団の足元に入れて朝までじんわり温まった、波打つトタン製の道具といえば？",
+    "choices": [
+      "火鉢（ひばち）",
+      "湯たんぽ（ゆたんぽ）",
+      "豆炭こたつ"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "湯たんぽ（ゆたんぽ）",
+    "explanation": "正解は「湯たんぽ」です！火を使わない優しい温もりで、冷えた布団をぽかぽかに暖めてくれました。",
+    "reminiscence": "昔の冬は今より寒かったですね。家ではどんな暖房や寒さ対策の工夫をしていましたか？",
+    "image": "images/q21_yutanpo.png",
+    "imageCaption": "ヤカンから熱いお湯を注ぎ布団の足元を温めたトタン製の「湯たんぽ」",
+    "imagePrompt": "Cozy retro Showa winter scene of an oval corrugated galvanized metal hot water bottle (yutanpo), pouring steaming water from vintage kettle, wrapping in soft cloth bag, placed inside heavy futon quilts, warm tatami room",
+    "audioFiles": {
+      "question": "audio/q21_question.wav",
+      "reminiscence": "audio/q21_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "湯たんぽ（ゆたんぽ）、火鉢（ひばち）、豆炭（まめたん）",
+      "questionScript": "第21問。ジャンルは、昭和の暖房・道具。寒い冬の夜、熱いお湯を入れて布袋で包み、お布団の足元に入れて温まった、波打つトタン製の道具といえば？……選択肢は、1番、火鉢。2番、湯たんぽ。3番、豆炭こたつ、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔の冬は今よりずっと寒かったですね。家ではどんな暖房や寒さ対策の工夫をしていましたか？……どうぞ、昔の冬の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 22,
+    "genre": "街の社交場",
+    "question": "10円玉や5円玉を握りしめて通った、ガラス瓶に入ったお菓子やくじ引き、おもちゃがたくさん並んでいた子どもたちの社交場は？",
+    "choices": [
+      "駄菓子屋（だがしや）さん",
+      "文房具屋さん",
+      "よろず屋さん"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "駄菓子屋（だがしや）さん",
+    "explanation": "正解は「駄菓子屋さん」です！優しいおじいちゃんやおばあちゃんがいて、近所の子どもたちの笑顔が集まる温かい場所でした。",
+    "reminiscence": "駄菓子屋さんで買ったお気に入りのお菓子（麩菓子、きなこ棒、梅ジャムなど）は覚えていますか？",
+    "image": "images/q22_dagashiya.png",
+    "imageCaption": "ガラスの地球瓶にお菓子が並び子どもが集まった懐かしの「駄菓子屋」",
+    "imagePrompt": "Charming nostalgic Showa era Japanese candy store (dagashiya), glass jars filled with colorful treats, hanging lottery prizes, vintage advertisements on wooden walls, elderly shopkeeper smiling at children with 10-yen coins, warm golden hour lighting",
+    "audioFiles": {
+      "question": "audio/q22_question.wav",
+      "reminiscence": "audio/q22_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "駄菓子屋（だがしや）、麩菓子（ふがし）、よろず屋（よろずや）",
+      "questionScript": "第22問。ジャンルは、街の社交場。10円玉を握りしめて通った、ガラス瓶のお菓子やくじ引き、おもちゃが並んでいた子どもたちの社交場は？……選択肢は、1番、駄菓子屋さん。2番、文房具屋さん。3番、よろず屋さん、です。",
+      "reminiscenceScript": "思い出の問いかけです。……駄菓子屋さんで買ったお気に入りのお菓子は覚えていますか？……どうぞ、懐かしいお菓子のお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 23,
+    "genre": "昭和の音楽・レコード",
+    "question": "昭和の時代、音楽を聴くためにターンテーブルの上にそっと置き、細い針を落として回していた、黒くて丸い円盤は何でしょう？",
+    "choices": [
+      "カセットテープ",
+      "レコード",
+      "ソノシート"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "レコード",
+    "explanation": "正解は「レコード」です！針を落とした瞬間の「チリチリ…」というかすかな音とともに、心に染みる音楽が流れました。",
+    "reminiscence": "初めて買ったレコードや、家族みんなでステレオを囲んで聴いた思い出の曲はありますか？",
+    "image": "images/q23_record.png",
+    "imageCaption": "針を落とすとチリチリと音が鳴り音楽が響く黒いLP「レコード」",
+    "imagePrompt": "Vintage Showa stereo turntable playing a black vinyl LP record, delicate needle on vinyl grooves, warm wooden audio cabinet, cozy living room with soft lighting, timeless nostalgic musical atmosphere",
+    "audioFiles": {
+      "question": "audio/q23_question.wav",
+      "reminiscence": "audio/q23_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "レコード、蓄音機（ちくおんき）、ソノシート、針（はり）",
+      "questionScript": "第23問。ジャンルは、昭和の音楽・レコード。昭和の時代、音楽を聴くためにターンテーブルの上にそっと置き、細い針を落として回していた、黒くて丸い円盤は何でしょう？……選択肢は、1番、カセットテープ。2番、レコード。3番、ソノシート、です。",
+      "reminiscenceScript": "思い出の問いかけです。……初めて買ったレコードや、家族みんなでステレオを囲んで聴いた思い出の曲はありますか？……どうぞ、思い出の曲をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 24,
+    "genre": "街角の娯楽・紙芝居",
+    "question": "自転車の荷台に木箱の舞台を乗せ、拍子木（ひょうしぎ）の音とともに水あめや型抜きを配りながら、名調子で語られた昔の街頭娯楽は？",
+    "choices": [
+      "人形劇",
+      "幻灯機（げんとうき）",
+      "紙芝居（かみしばい）"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "紙芝居（かみしばい）",
+    "explanation": "正解は「紙芝居」です！『黄金バット』などの冒険物語に、子どもたちは目を輝かせて聞き入っていました。",
+    "reminiscence": "紙芝居のおじさんが来たとき、水あめを練ったりソースせんべいを食べた思い出はありますか？",
+    "image": "images/q24_kamishibai.png",
+    "imageCaption": "自転車の荷台に舞台を乗せ水あめと拍子木で始まった「紙芝居」",
+    "imagePrompt": "Heartwarming 1950s Showa illustration of a traveling paper theater (kamishibai) storyteller on a bicycle, wooden stage box mounted on bike rack, enthusiastic children gathered around eating candy syrup, nostalgic neighborhood vacant lot",
+    "audioFiles": {
+      "question": "audio/q24_question.wav",
+      "reminiscence": "audio/q24_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "紙芝居（かみしばい）、拍子木（ひょうしぎ）、水あめ（みずあめ）",
+      "questionScript": "第24問。ジャンルは、街角の娯楽。自転車の荷台に舞台を乗せ、ひょうしぎの音とともに水あめを配りながら、名調子で語られた昔の街頭娯楽は？……選択肢は、1番、人形劇。2番、幻灯機。3番、紙芝居、です。",
+      "reminiscenceScript": "思い出の問いかけです。……紙芝居のおじさんが来たとき、水あめを練ったりソースせんべいを食べた思い出はありますか？……どうぞ、当時のワクワクしたお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 25,
+    "genre": "昭和の乗り物",
+    "question": "昭和30年代、バタバタと大きなエンジン音を立てて狭い路地を走り抜け、荷物の運搬で大活躍した3つの車輪のトラックといえば？",
+    "choices": [
+      "リヤカー",
+      "オート三輪（ミゼットなど）",
+      "軽トラック"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "オート三輪（ミゼットなど）",
+    "explanation": "正解は「オート三輪」です！小回りが利き、商店街の配達や農作業で大活躍した昭和の庶民派トラックでした。",
+    "reminiscence": "昔の街並みで見かけた車やバイク、オート三輪の力強い音を覚えていますか？",
+    "image": "images/q25_autosanrin.png",
+    "imageCaption": "バタバタと音を立てて狭い路地を走り抜けた昭和の「オート三輪」",
+    "imagePrompt": "Vintage three-wheeled pickup truck (auto-sanrin midget) driving down a Showa era shopping street, carrying wooden crates and vegetables, round headlights, old wooden merchant houses with retro signs, warm cheerful nostalgic watercolor",
+    "audioFiles": {
+      "question": "audio/q25_question.wav",
+      "reminiscence": "audio/q25_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "オート三輪（おーと さんりん）、ミゼット、運搬（うんぱん）",
+      "questionScript": "第25問。ジャンルは、昭和の乗り物。昭和30年代、バタバタと大きなエンジン音を立てて路地を走り、荷物の運搬で大活躍した3つの車輪のトラックといえば？……選択肢は、1番、リヤカー。2番、オート三輪。3番、軽トラック、です。",
+      "reminiscenceScript": "思い出の問いかけです。……昔の街並みで見かけた車やバイク、オート三輪の力強い音を覚えていますか？……どうぞ、懐かしい乗り物のお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 26,
+    "genre": "昭和の通信・道具",
+    "question": "指を入れてジーコジーコと数字の穴を回して番号をかけ、受話器がずっしりと重たかった、懐かしい電話機といえば？",
+    "choices": [
+      "プッシュホン",
+      "糸電話",
+      "黒電話（ダイヤル式）"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "黒電話（ダイヤル式）",
+    "explanation": "正解は「黒電話」です！ジーコ、ジーコと回す感触と、ベルの「ジリリリリ〜ン！」という元気な音が懐かしいですね。",
+    "reminiscence": "お家に初めて電話がついた日のことや、分厚い電話帳をめくって番号を調べた思い出はありますか？",
+    "image": "images/q26_kurodenwa.png",
+    "imageCaption": "ダイヤルの穴に指を入れてジーコと回す重厚な「黒電話」とレース敷物",
+    "imagePrompt": "Nostalgic heavy rotary dial black telephone (kuro-denwa) on a polished wooden stand, white lace doily underneath, coiled cord, thick telephone directory book nearby, cozy hallway of a traditional Showa Japanese home",
+    "audioFiles": {
+      "question": "audio/q26_question.wav",
+      "reminiscence": "audio/q26_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "黒電話（くろでんわ）、受話器（じゅわき）、ダイヤル式（だいやるしき）",
+      "questionScript": "第26問。ジャンルは、昭和の通信・道具。指を入れてジーコジーコと数字の穴を回して番号をかけ、受話器が重たかった懐かしい電話機といえば？……選択肢は、1番、プッシュホン。2番、糸電話。3番、黒電話、です。",
+      "reminiscenceScript": "思い出の問いかけです。……お家に初めて電話がついた日のことや、分厚い電話帳をめくって番号を調べた思い出はありますか？……どうぞ、懐かしい電話のお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 27,
+    "genre": "夏の風物詩・暮らし",
+    "question": "昔の夏の夜、蚊から身を守るために部屋の四隅に吊り下げて、その中に布団を敷いて寝た、緑色の網でできた大きな囲いは何でしょう？",
+    "choices": [
+      "蚊帳（かや）",
+      "すだれ",
+      "のれん"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "蚊帳（かや）",
+    "explanation": "正解は「蚊帳」です！蚊取り線香の香りと一緒に、蚊帳の中で風を感じながら眠るのが日本の夏の原風景でした。",
+    "reminiscence": "蚊帳を吊ってもらった時、なんだか秘密基地の中に入ったようでワクワクしませんでしたか？",
+    "image": "images/q27_kaya.png",
+    "imageCaption": "和室の四隅に吊られた緑の網と蚊取り線香の煙が懐かしい「蚊帳」",
+    "imagePrompt": "Peaceful summer night in Showa Japan, pale green mesh mosquito net (kaya) hung in tatami room, futons laid out inside, coil incense burning outside emitting gentle curl of fragrant smoke, paper screen sliding doors open to night breeze",
+    "audioFiles": {
+      "question": "audio/q27_question.wav",
+      "reminiscence": "audio/q27_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "蚊帳（かや）、蚊取り線香（かとりせんこう）、四隅（よすみ）",
+      "questionScript": "第27問。ジャンルは、夏の風物詩。昔の夏の夜、蚊から身を守るために部屋の四隅に吊り下げて、布団を敷いて寝た緑色の網でできた囲いは何でしょう？……選択肢は、1番、蚊帳。2番、すだれ。3番、のれん、です。",
+      "reminiscenceScript": "思い出の問いかけです。……蚊帳を吊ってもらった時、なんだか秘密基地に入ったようでワクワクしませんでしたか？……どうぞ、夏の夜の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 28,
+    "genre": "昭和の大ブーム",
+    "question": "昭和33年、プラスチック製の大きな輪っかを腰でクルクル回す遊びが大流行し、子どもも大人も夢中になって全国で売り切れたおもちゃは？",
+    "choices": [
+      "ホッピング",
+      "ダッコちゃん",
+      "フラフープ"
+    ],
+    "correctIndex": 2,
+    "correctAnswer": "フラフープ",
+    "explanation": "正解は「フラフープ」です！公園や広場で誰が一番長く回せるか競い合い、日本中で大ブームになりました。",
+    "reminiscence": "子どもの頃や若い頃、周りでみんなが夢中になって流行ったおもちゃや遊びは何ですか？",
+    "image": "images/q28_hulahoop.png",
+    "imageCaption": "腰でプラスチックの輪をクルクル回して公園で遊んだ「フラフープ」",
+    "imagePrompt": "Lively 1958 Showa scene of a girl spinning a colorful plastic hula hoop around her waist in a park, friends and mothers clapping and laughing, retro dresses and hairstyles, sunny cheerful retro Japanese illustration",
+    "audioFiles": {
+      "question": "audio/q28_question.wav",
+      "reminiscence": "audio/q28_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "フラフープ、ホッピング、ダッコちゃん",
+      "questionScript": "第28問。ジャンルは、昭和の大ブーム。昭和33年、プラスチックの輪っかを腰でクルクル回す遊びが大流行し、全国で売り切れたおもちゃは？……選択肢は、1番、ホッピング。2番、ダッコちゃん。3番、フラフープ、です。",
+      "reminiscenceScript": "思い出の問いかけです。……子どもの頃や若い頃、周りでみんなが夢中になって流行ったおもちゃや遊びは何ですか？……どうぞ、懐かしい流行のお話しをしてみてくださいね。"
+    }
+  },
+  {
+    "id": 29,
+    "genre": "昭和のシンボル",
+    "question": "昭和33年に完成し、高さ333メートルを誇り、夜には美しくライトアップされて昭和の復興と日本の発展の象徴となった赤い塔は？",
+    "choices": [
+      "東京タワー",
+      "通天閣（つうてんかく）",
+      "京都タワー"
+    ],
+    "correctIndex": 0,
+    "correctAnswer": "東京タワー",
+    "explanation": "正解は「東京タワー」です！映画『ALWAYS 三丁目の夕日』でも描かれたように、建設中の姿に人々は未来の希望を重ねました。",
+    "reminiscence": "東京タワーをテレビや映画で見たり、修学旅行や観光で訪れた思い出はありますか？",
+    "image": "images/q29_tokyotower.png",
+    "imageCaption": "昭和33年に完成し青空に高くそびえ立つ希望のシンボル「東京タワー」",
+    "imagePrompt": "Iconic red and white Tokyo Tower rising proudly into crisp blue sky in 1958, low-rise Showa period wooden and tiled houses below, streetcar passing in foreground, bright hopeful atmosphere, nostalgic retro postcard style",
+    "audioFiles": {
+      "question": "audio/q29_question.wav",
+      "reminiscence": "audio/q29_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "東京タワー（とうきょう たわー）、通天閣（つうてんかく）、三丁目の夕日（さんちょうめの ゆうひ）",
+      "questionScript": "第29問。ジャンルは、昭和のシンボル。昭和33年に完成し、高さ333メートルを誇り、夜には美しくライトアップされて発展の象徴となった赤い塔は？……選択肢は、1番、東京タワー。2番、通天閣。3番、京都タワー、です。",
+      "reminiscenceScript": "思い出の問いかけです。……東京タワーをテレビや映画で見たり、修学旅行や観光で訪れた思い出はありますか？……どうぞ、当時の思い出をお話ししてみてくださいね。"
+    }
+  },
+  {
+    "id": 30,
+    "genre": "四国・自然の恵み",
+    "question": "四国と淡路島の間にある海峡で、潮の満ち引きによって生まれる、世界最大級の豪快な海の渦巻きといえば？",
+    "choices": [
+      "潮岬の白波",
+      "鳴門の渦潮（なるとのうずしお）",
+      "室戸の三角波"
+    ],
+    "correctIndex": 1,
+    "correctAnswer": "鳴門の渦潮（なるとのうずしお）",
+    "explanation": "正解は「鳴門の渦潮」です！最大で直径20メートルにも達する大渦は、四国の大自然の力強さを今に伝えています。",
+    "reminiscence": "船に乗って渦潮を見に行ったり、四国の美しい海や山へお出かけした思い出はありますか？",
+    "image": "images/q30_naruto.png",
+    "imageCaption": "青い海に激しく白波を立てて渦を巻く四国の豪快な「鳴門の渦潮」",
+    "imagePrompt": "Dramatic panoramic illustration of the giant Naruto whirlpools in Shikoku, swirling white foam and deep blue sea currents, a sightseeing cruise ship navigating nearby, distant green coastline, classic Showa travel poster art style",
+    "audioFiles": {
+      "question": "audio/q30_question.wav",
+      "reminiscence": "audio/q30_reminiscence.wav"
+    },
+    "audioScripts": {
+      "pronunciationGuide": "鳴門の渦潮（なるとの うずしお）、潮岬（しおのみさき）、淡路島（あわじしま）",
+      "questionScript": "第30問。ジャンルは、四国・自然の恵み。四国と淡路島の間にある海峡で、潮の満ち引きによって生まれる、世界最大級の豪快な海の渦巻きといえば？……選択肢は、1番、潮岬の白波。2番、鳴門の渦潮。3番、室戸の三角波、です。",
+      "reminiscenceScript": "思い出の問いかけです。……船に乗って渦潮を見に行ったり、四国の美しい海や山へお出かけした思い出はありますか？……どうぞ、四国の旅の思い出をお話ししてみてくださいね。"
+    }
+  }
+];
+
+  // ==========================================
+  // 2. 状態管理
+  // ==========================================
+  let currentQuestionIndex = 0;
+  let isAnswered = false;
+  let isSoundEnabled = true;
+
+  // オーディオ再生用
+  let currentAudio = null;
+  let synth = window.speechSynthesis || null;
+
+  // Web Audio API（効果音用）
+  let audioCtx = null;
+
+  // ==========================================
+  // 3. DOM要素の取得
+  // ==========================================
+  // 画面コンテナ
+  const titleScreen = document.getElementById('titleScreen');
+  const quizScreen = document.getElementById('quizScreen');
+  const endScreen = document.getElementById('endScreen');
+
+  // ヘッダーコントロール
+  const btnToggleSound = document.getElementById('btnToggleSound');
+  const soundIcon = document.getElementById('soundIcon');
+  const soundStatusText = document.getElementById('soundStatusText');
+  const btnToggleSettings = document.getElementById('btnToggleSettings');
+  const voiceSettingsPanel = document.getElementById('voiceSettingsPanel');
+  const enableBrowserTts = document.getElementById('enableBrowserTts');
+  const fontButtons = document.querySelectorAll('.btn-font');
+
+  // タイトル画面
+  const btnStart = document.getElementById('btnStart');
+
+  // クイズ画面
+  const questionBadge = document.getElementById('questionBadge');
+  const questionGenreBadge = document.getElementById('questionGenreBadge');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const questionText = document.getElementById('questionText');
+  const choicesContainer = document.getElementById('choicesContainer');
+  const btnSpeak = document.getElementById('btnSpeak');
+  const speechBtnText = document.getElementById('speechBtnText');
+
+  // スタッフ用ガイド（問題文用）
+  const scriptGuideBox = document.getElementById('scriptGuideBox');
+  const guidePronunciation = document.getElementById('guidePronunciation');
+  const guideText = document.getElementById('guideText');
+  const btnCloseGuide = document.getElementById('btnCloseGuide');
+
+  // 回想コーナー用インライン問いかけガイド（ボタン直下・スクロールなし）
+  const reminiscenceGuideBox = document.getElementById('reminiscenceGuideBox');
+  const reminiscenceGuideText = document.getElementById('reminiscenceGuideText');
+  const btnCloseReminiscenceGuide = document.getElementById('btnCloseReminiscenceGuide');
+
+  // 回答結果・画像・回想カード
+  const resultFeedbackCard = document.getElementById('resultFeedbackCard');
+  const feedbackIcon = document.getElementById('feedbackIcon');
+  const feedbackTitle = document.getElementById('feedbackTitle');
+  const resultImageBox = document.getElementById('resultImageBox');
+  const resultImage = document.getElementById('resultImage');
+  const imageCaption = document.getElementById('imageCaption');
+  const explanationText = document.getElementById('explanationText');
+  const reminiscencePrompt = document.getElementById('reminiscencePrompt');
+  const btnSpeakReminiscence = document.getElementById('btnSpeakReminiscence');
+  const reminiscenceSpeechBtnText = document.getElementById('reminiscenceSpeechBtnText');
+  const btnNext = document.getElementById('btnNext');
+  const nextBtnText = document.getElementById('nextBtnText');
+
+  // 終了画面
+  const btnSpeakEnding = document.getElementById('btnSpeakEnding');
+  const endingSpeechBtnText = document.getElementById('endingSpeechBtnText');
+  const btnRestart = document.getElementById('btnRestart');
+
+  // ==========================================
+  // 4. Web Audio API（効果音生成・外部ファイル不要）
+  // ==========================================
+  function initAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  // 正解音：「ピンポーン」（明るく澄んだ2音のサイン波チャイム）
+  function playCorrectSound() {
+    if (!isSoundEnabled) return;
+    initAudioContext();
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1046.5, now); // C6
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.18, now + 0.03);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(783.99, now + 0.18); // G5
+    gain2.gain.setValueAtTime(0, now + 0.18);
+    gain2.gain.linearRampToValueAtTime(0.20, now + 0.22);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(now + 0.18);
+    osc2.stop(now + 0.75);
+  }
+
+  // 不正解音：「ぽ〜ん…」（角の立たない穏やかな低音・三角波）
+  function playIncorrectSound() {
+    if (!isSoundEnabled) return;
+    initAudioContext();
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(261.63, now); // C4
+    osc.frequency.exponentialRampToValueAtTime(220.0, now + 0.45); // A3
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.55);
+  }
+
+  // 効果音ON/OFFトグル
+  btnToggleSound.addEventListener('click', () => {
+    isSoundEnabled = !isSoundEnabled;
+    if (isSoundEnabled) {
+      btnToggleSound.classList.remove('sound-off');
+      btnToggleSound.setAttribute('aria-pressed', 'true');
+      soundIcon.textContent = "🔔";
+      soundStatusText.textContent = "効果音：入";
+      playCorrectSound();
+    } else {
+      btnToggleSound.classList.add('sound-off');
+      btnToggleSound.setAttribute('aria-pressed', 'false');
+      soundIcon.textContent = "🔕";
+      soundStatusText.textContent = "効果音：切";
+    }
+  });
+
+  // 設定パネル開閉
+  btnToggleSettings.addEventListener('click', () => {
+    const isExpanded = btnToggleSettings.getAttribute('aria-expanded') === 'true';
+    btnToggleSettings.setAttribute('aria-expanded', !isExpanded);
+    voiceSettingsPanel.style.display = isExpanded ? 'none' : 'block';
+  });
+
+  // ==========================================
+  // 5. 音声再生 & スタッフ読み上げガイドのハイブリッド制御
+  // ==========================================
+  function stopAllAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
+    if (synth) {
+      synth.cancel();
+    }
+    btnSpeak.classList.remove('speaking');
+    btnSpeakReminiscence.classList.remove('speaking');
+    btnSpeakEnding.classList.remove('speaking');
+  }
+
+  // ガイド表示関数
+  function showStaffGuide(pronunciation, script) {
+    guidePronunciation.textContent = `【読み方注意】${pronunciation}`;
+    guideText.textContent = script;
+    scriptGuideBox.style.display = 'block';
+    scriptGuideBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  btnCloseGuide.addEventListener('click', () => {
+    scriptGuideBox.style.display = 'none';
+  });
+
+  // 回想問いかけガイドの閉じるボタン
+  btnCloseReminiscenceGuide.addEventListener('click', () => {
+    reminiscenceGuideBox.style.display = 'none';
+  });
+
+  // 回想コーナー専用の問いかけ処理（画面スクロールなし・ボタン直下インライン展開）
+  function handleReminiscenceSpeechOrGuide(audioFilePath, scriptText) {
+    // 再生中なら停止
+    if (btnSpeakReminiscence.classList.contains('speaking')) {
+      stopAllAudio();
+      reminiscenceSpeechBtnText.textContent = "問いかけの言葉";
+      return;
+    }
+
+    stopAllAudio();
+
+    // 音声ファイルが存在する場合は再生を試行
+    if (audioFilePath) {
+      const audio = new Audio(audioFilePath);
+      audio.onplay = () => {
+        btnSpeakReminiscence.classList.add('speaking');
+        reminiscenceSpeechBtnText.textContent = "⏹ 音声を止める";
+      };
+      audio.onended = () => {
+        btnSpeakReminiscence.classList.remove('speaking');
+        reminiscenceSpeechBtnText.textContent = "問いかけの言葉";
+        currentAudio = null;
+      };
+      audio.onerror = () => {
+        currentAudio = null;
+        btnSpeakReminiscence.classList.remove('speaking');
+        reminiscenceSpeechBtnText.textContent = "問いかけの言葉";
+
+        if (enableBrowserTts.checked && synth) {
+          speakWithBrowserTts(scriptText, btnSpeakReminiscence, reminiscenceSpeechBtnText, "問いかけの言葉");
+        } else {
+          // 音声ファイル未配置時：画面をスクロールさせずボタン直下にインライン展開（トグル）
+          toggleReminiscenceInlineGuide(scriptText);
+        }
+      };
+
+      currentAudio = audio;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          audio.onerror();
+        });
+      }
+      return;
+    }
+
+    // 音声未設定時はボタン直下にインライン表示（トグル）
+    toggleReminiscenceInlineGuide(scriptText);
+  }
+
+  // 画面スクロールを一切行わず、ボタン直下に自然に開閉する関数
+  function toggleReminiscenceInlineGuide(scriptText) {
+    if (reminiscenceGuideBox.style.display === 'block') {
+      reminiscenceGuideBox.style.display = 'none';
+    } else {
+      reminiscenceGuideText.textContent = scriptText;
+      reminiscenceGuideBox.style.display = 'block';
+      // 注意: scrollIntoView は一切実行しない（解答画面・画像をそのまま視界に維持）
+    }
+  }
+
+  // 音声ファイルの再生を試み、なければ原稿ガイド表示
+  function handlePlayOrGuide(audioFilePath, scriptText, pronunciation, buttonEl, btnTextEl, defaultBtnLabel) {
+    // すでに再生中なら停止
+    if (buttonEl.classList.contains('speaking')) {
+      stopAllAudio();
+      btnTextEl.textContent = defaultBtnLabel;
+      return;
+    }
+
+    stopAllAudio();
+
+    // 1. 音声ファイル（AivisSpeech等で事前生成されたWAV/MP3）の再生を試行
+    if (audioFilePath) {
+      const audio = new Audio(audioFilePath);
+      audio.onplay = () => {
+        buttonEl.classList.add('speaking');
+        btnTextEl.textContent = "⏹ 音声を止める";
+      };
+      audio.onended = () => {
+        buttonEl.classList.remove('speaking');
+        btnTextEl.textContent = defaultBtnLabel;
+        currentAudio = null;
+      };
+      audio.onerror = () => {
+        // 音声ファイルが存在しない場合
+        currentAudio = null;
+        buttonEl.classList.remove('speaking');
+        btnTextEl.textContent = defaultBtnLabel;
+
+        // ブラウザ合成音声が明示的にチェックされている場合のみフォールバック
+        if (enableBrowserTts.checked && synth) {
+          speakWithBrowserTts(scriptText, buttonEl, btnTextEl, defaultBtnLabel);
+        } else {
+          // 基本運用：スタッフ読み上げガイドを表示
+          showStaffGuide(pronunciation, scriptText);
+        }
+      };
+
+      currentAudio = audio;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // 自動再生ブロックやファイル無し
+          audio.onerror();
+        });
+      }
+      return;
+    }
+
+    // 音声ファイル未設定時はガイド表示
+    showStaffGuide(pronunciation, scriptText);
+  }
+
+  // ブラウザTTS（テスト用フォールバック）
+  function speakWithBrowserTts(text, buttonEl, btnTextEl, defaultBtnLabel) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+    utterance.rate = 0.88;
+    utterance.onstart = () => {
+      buttonEl.classList.add('speaking');
+      btnTextEl.textContent = "⏹ 読み上げを止める";
+    };
+    utterance.onend = () => {
+      buttonEl.classList.remove('speaking');
+      btnTextEl.textContent = defaultBtnLabel;
+    };
+    utterance.onerror = () => {
+      buttonEl.classList.remove('speaking');
+      btnTextEl.textContent = defaultBtnLabel;
+    };
+    synth.speak(utterance);
+  }
+
+  // ==========================================
+  // 6. 画面切り替え & クイズ表示ロジック
+  // ==========================================
+  function showScreen(screen) {
+    stopAllAudio();
+    scriptGuideBox.style.display = 'none';
+    if (reminiscenceGuideBox) reminiscenceGuideBox.style.display = 'none';
+    titleScreen.style.display = 'none';
+    quizScreen.style.display = 'none';
+    endScreen.style.display = 'none';
+
+    screen.style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function startQuiz() {
+    initAudioContext();
+    currentQuestionIndex = 0;
+    showScreen(quizScreen);
+    loadQuestion(currentQuestionIndex);
+  }
+
+  function loadQuestion(index) {
+    isAnswered = false;
+    stopAllAudio();
+    scriptGuideBox.style.display = 'none';
+    if (reminiscenceGuideBox) reminiscenceGuideBox.style.display = 'none';
+
+    const q = quizData[index];
+    const total = quizData.length;
+
+    // バッジ & プログレスバーの更新
+    questionBadge.textContent = `第 ${index + 1} 問 / 全 ${total} 問`;
+    questionGenreBadge.textContent = q.genre;
+    const progressPercent = Math.round(((index + 1) / total) * 100);
+    progressBarFill.style.width = `${progressPercent}%`;
+
+    // 問題文
+    questionText.textContent = q.question;
+
+    // 回答フィードバックカードを隠す
+    resultFeedbackCard.style.display = 'none';
+
+    // 画像領域を初期化
+    resultImageBox.style.display = 'none';
+    resultImage.src = '';
+
+    // 選択肢ボタンの動的生成
+    choicesContainer.innerHTML = '';
+    const numberLabels = ['1', '2', '3'];
+
+    q.choices.forEach((choice, i) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn-choice';
+      button.setAttribute('data-index', i);
+      button.setAttribute('aria-label', `選択肢${numberLabels[i]}番：${choice}`);
+
+      button.innerHTML = `
+        <span class="choice-number" aria-hidden="true">${numberLabels[i]}</span>
+        <span class="choice-label">${choice}</span>
+      `;
+
+      button.addEventListener('click', () => handleChoiceSelect(i));
+      choicesContainer.appendChild(button);
+    });
+
+    // 次へボタンの文言
+    if (index === total - 1) {
+      nextBtnText.textContent = "昭和の旅を終える（終了）";
+    } else {
+      nextBtnText.textContent = "次の問題へすすむ";
+    }
+  }
+
+  // ==========================================
+  // 7. 回答処理（効果音・画像・温かいフィードバック）
+  // ==========================================
+  function handleChoiceSelect(selectedIndex) {
+    if (isAnswered) return;
+    isAnswered = true;
+    stopAllAudio();
+
+    const q = quizData[currentQuestionIndex];
+    const isCorrect = (selectedIndex === q.correctIndex);
+
+    // 効果音の再生
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playIncorrectSound();
+    }
+
+    // ボタンの無効化とスタイリング
+    const choiceButtons = choicesContainer.querySelectorAll('.btn-choice');
+    choiceButtons.forEach((btn, idx) => {
+      btn.disabled = true;
+      if (idx === selectedIndex) {
+        btn.classList.add('is-selected');
+      }
+      if (idx === q.correctIndex) {
+        btn.classList.add('is-correct-target');
+      }
+    });
+
+    // メッセージの改善
+    if (isCorrect) {
+      feedbackIcon.textContent = "🌸";
+      feedbackTitle.textContent = "大正解！すばらしいですね！";
+    } else {
+      feedbackIcon.textContent = "✨";
+      feedbackTitle.textContent = `惜しかったですね！正解は「${q.choices[q.correctIndex]}」でした。`;
+    }
+
+    // 回答後の画像表示処理（画像が実在する場合のみ表示、ない場合は完全に非表示）
+    if (q.image) {
+      resultImageBox.style.display = 'none';
+      resultImage.onload = () => {
+        resultImageBox.style.display = 'block';
+      };
+      resultImage.onerror = () => {
+        resultImageBox.style.display = 'none';
+      };
+      resultImage.src = q.image;
+      imageCaption.textContent = q.imageCaption || "";
+    } else {
+      resultImageBox.style.display = 'none';
+      resultImage.src = '';
+    }
+
+    // 解説と回想コーナーの問いかけを設定
+    explanationText.textContent = q.explanation;
+    reminiscencePrompt.textContent = `「${q.reminiscence}」`;
+
+    // 表示
+    resultFeedbackCard.style.display = 'block';
+
+    // 回想カードが見えるようにスムーズスクロール
+    setTimeout(() => {
+      resultFeedbackCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
+  }
+
+  // 次の問題へ
+  function nextQuestion() {
+    stopAllAudio();
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizData.length) {
+      loadQuestion(currentQuestionIndex);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      showScreen(endScreen);
+    }
+  }
+
+  // ==========================================
+  // 8. 文字サイズ変更（見やすさ配慮）
+  // ==========================================
+  fontButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      fontButtons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+
+      const size = btn.getAttribute('data-size');
+      document.body.classList.remove('font-standard', 'font-large', 'font-xlarge');
+      if (size === 'standard') {
+        document.body.classList.add('font-standard');
+      } else if (size === 'xlarge') {
+        document.body.classList.add('font-xlarge');
+      } else {
+        document.body.classList.add('font-large');
+      }
+    });
+  });
+
+  // ==========================================
+  // 9. イベントリスナー登録
+  // ==========================================
+  // スタートボタン
+  btnStart.addEventListener('click', startQuiz);
+
+  // 問題文の読み上げ原稿 / 音声ボタン
+  btnSpeak.addEventListener('click', () => {
+    const q = quizData[currentQuestionIndex];
+    if (!q) return;
+    const audioPath = q.audioFiles ? q.audioFiles.question : null;
+    const script = q.audioScripts ? q.audioScripts.questionScript : q.question;
+    const guide = q.audioScripts ? q.audioScripts.pronunciationGuide : "";
+    handlePlayOrGuide(audioPath, script, guide, btnSpeak, speechBtnText, "問題の読み上げ原稿");
+  });
+
+  // 回想問いかけの原稿 / 音声ボタン（画面スクロールなし・ボタン直下にインライン展開）
+  btnSpeakReminiscence.addEventListener('click', () => {
+    const q = quizData[currentQuestionIndex];
+    if (!q) return;
+    const audioPath = q.audioFiles ? q.audioFiles.reminiscence : null;
+    const script = q.audioScripts ? q.audioScripts.reminiscenceScript : q.reminiscence;
+    handleReminiscenceSpeechOrGuide(audioPath, script);
+  });
+
+  // 終了画面の言葉 / 音声ボタン
+  btnSpeakEnding.addEventListener('click', () => {
+    const audioPath = "audio/ending_message.wav";
+    const script = "昭和の旅、おつかれさまでした。たくさんの懐かしい思い出に出会えましたね。ご参加いただき、心からありがとうございました。高知や四国の懐かしい風景、昭和の暮らしやごちそう、家族やお友達と過ごした温かい記憶がたくさんよみがえってきましたね。今日お話しいただいた一つひとつの思い出や笑顔は、かけがえのない大切な宝物です。ここで一息、温かいお茶でも召し上がりながら、皆さんと今日の余韻をお楽しみください。";
+    const guide = "参加者全員への温かい労いとお茶の時間へのご案内";
+    handlePlayOrGuide(audioPath, script, guide, btnSpeakEnding, endingSpeechBtnText, "終了の言葉");
+  });
+
+  // 次へボタン
+  btnNext.addEventListener('click', nextQuestion);
+
+  // 最初からもういちど遊ぶボタン
+  btnRestart.addEventListener('click', () => {
+    showScreen(titleScreen);
+  });
+});
