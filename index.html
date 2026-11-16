@@ -87,6 +87,12 @@
             <span class="btn-icon">🚀</span>
             <span class="btn-text">クイズをはじめる</span>
           </button>
+          <button type="button" id="btnStartFrom11" class="btn btn-secondary btn-large">
+            <span class="btn-text">第11問から始める</span>
+          </button>
+          <button type="button" id="btnStartFrom21" class="btn btn-secondary btn-large">
+            <span class="btn-text">第21問から始める</span>
+          </button>
         </div>
       </section>
 
@@ -184,6 +190,9 @@
 
           <!-- 次の問題へボタン -->
           <div class="next-action-area">
+            <a href="goodbye.html" id="btnStopHere" class="btn btn-secondary btn-large" style="display: none; text-decoration: none;">
+              <span class="btn-text">今日はここまで（お別れの挨拶へ）</span>
+            </a>
             <button type="button" id="btnNext" class="btn btn-primary btn-large">
               <span class="btn-text" id="nextBtnText">次の問題へすすむ</span>
               <span class="btn-icon">➡</span>
@@ -201,7 +210,7 @@
         <p class="sub-heading">たくさんの懐かしい思い出に出会えましたね</p>
 
         <!-- 終了画面用の読み上げボタン -->
-        <div class="speech-control-bar ending-speech-bar">
+        <div class="speech-control-bar ending-speech-bar" style="display: none;">
           <button type="button" id="btnSpeakEnding" class="btn btn-speech" aria-label="終了メッセージを声で聴く・原稿を確認します">
             <span class="speaker-icon" aria-hidden="true">📖</span>
             <span id="endingSpeechBtnText">終了の言葉</span>
@@ -222,6 +231,10 @@
         </div>
 
         <div class="action-area">
+          <a href="goodbye.html" class="btn btn-primary btn-giant" style="text-decoration: none;">
+            <span class="btn-icon">👋</span>
+            <span class="btn-text">お別れの挨拶を見る</span>
+          </a>
           <button type="button" id="btnRestart" class="btn btn-secondary btn-giant">
             <span class="btn-icon">🔄</span>
             <span class="btn-text">もういちど最初から遊ぶ</span>

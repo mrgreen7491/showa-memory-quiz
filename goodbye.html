@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>デイサービス テレビクイズ お別れの挨拶</title>
+<style>
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #f0f8ff;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+  #start-btn {
+    font-size: 32px;
+    padding: 20px 50px;
+    margin-top: 150px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #d94848;
+  }
+  #greeting-area {
+    display: none;
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+  #chara-img {
+    width: 320px;
+    height: auto;
+    border-radius: 15px;
+    animation: sway 2.5s infinite ease-in-out;
+  }
+  @keyframes sway {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+  }
+  #subtitle-box {
+    font-size: 28px;
+    line-height: 1.6;
+    font-weight: bold;
+    color: #333;
+    background-color: #fff9db;
+    border: 3px solid #fcc419;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: left;
+  }
+  #skip-btn {
+    margin-top: 20px;
+    font-size: 18px;
+    padding: 10px 25px;
+    background-color: #adb5bd;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ① 最初の待機画面 -->
+  <div id="start-screen">
+    <h1>📺 今日のテレビクイズ おしまい</h1>
+    <button id="start-btn">お別れの挨拶を聞く</button>
+  </div>
+
+  <!-- ② 司会者の挨拶アニメーション画面 -->
+  <div id="greeting-area">
+    <img id="chara-img" src="chara_close.png" alt="司会者">
+    <div id="subtitle-box">
+      昭和の旅、おつかれさまでした。<br>
+      たくさんの懐かしい思い出に出会えましたね。<br>
+      ご参加いただき、心からありがとうございました。<br>
+      高知や四国の懐かしい風景、昭和の暮らしやごちそう、家族やお友達と過ごした温かい記憶がたくさんよみがえってきましたね。<br>
+      今日お話しいただいた一つひとつの思い出や笑顔は、かけがえのない大切な宝物です。<br>
+      これからも、皆さんと一緒に楽しいお話をたくさんできることを楽しみにしています！<br>
+      今日のテレビクイズはこれでおしまいです。<br>
+      今日出た昭和のさまざまな場面を思い出しながら、お友だちの皆さんと今日の余韻をお楽しみください。<br>
+      また、お会いしましょう！<br>
+    </div>
+    <button id="skip-btn">最初の画面にもどる ➔</button>
+  </div>
+
+  <audio id="greeting-audio" src="seeyouagain.wav"></audio>
+
+<script>
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const greetingArea = document.getElementById('greeting-area');
+    const charaImg = document.getElementById('chara-img');
+  const audio = document.getElementById('greeting-audio');
+  const skipBtn = document.getElementById('skip-btn');
+
+  let audioCtx, analyser, source;
+  let lipSyncTimer, blinkTimer, blinkResetTimer;
+  let isBlinking = false;
+  let animating = false;   // 口パク・まばたきを動かしている間だけ true
+
+  // 口の開き具合のしきい値（console.log の値を見て調整できます）
+  // greeting.wav を解析して決めた値（声が大きい音声のため、高めに設定）
+  const THRESHOLD_OPEN = 160;
+  const THRESHOLD_HALF = 80;
+  const DEBUG_LOG = false;  // true にすると音量の値をコンソールに表示
+
+  // 画像の事前読み込み（切り替え時のチラつき防止）
+  const images = ['chara_close.png', 'chara_half.png', 'chara_open.png', 'chara_blink.png'];
+  const missing = [];
+  images.forEach(src => {
+    const img = new Image();
+    img.onerror = () => {
+      missing.push(src);
+      let box = document.getElementById('missing-box');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'missing-box';
+        box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;background:#c92a2a;color:#fff;padding:12px;font-size:18px;z-index:9999;text-align:left;';
+        document.body.appendChild(box);
+      }
+      box.textContent = '画像が見つかりません: ' + missing.join('、') +
+        '（public フォルダの場所とファイル名を確認してください）';
+    };
+    img.src = src;
+  });
+
+  startBtn.addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    greetingArea.style.display = 'block';
+
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.3;  // 反応を速くする
+      source = audioCtx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+
+    // ブラウザが音声エンジンを止めている場合に再開する
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // 再生に失敗しても、スキップボタンは使えるようにする
+    audio.play().catch(() => {});
+
+    startAnimations();
+  });
+
+  function startAnimations() {
+    animating = true;
+
+    // 1. 3段階口パク処理（0.09秒ごとに音量チェック）
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const N = 30;  // 人の声の帯域（約0〜5kHz）だけを見る
+    lipSyncTimer = setInterval(() => {
+      if (isBlinking) return; // まばたき中は目を閉じた画像を優先
+
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < N; i++) sum += dataArray[i];
+      const average = sum / N;
+      if (DEBUG_LOG) console.log(average.toFixed(1));
+
+      if (average > THRESHOLD_OPEN) {
+        charaImg.src = 'chara_open.png';  // 大きな声：全開
+      } else if (average > THRESHOLD_HALF) {
+        charaImg.src = 'chara_half.png';  // 小さな声：半開き
+      } else {
+        charaImg.src = 'chara_close.png'; // 無音：閉じ
+      }
+    }, 90);
+
+    // 2. ランダムなまばたき処理（3〜5秒ごとに一瞬目を閉じる）
+    function scheduleBlink() {
+      if (!animating) return;
+      const nextBlink = Math.random() * 2000 + 3000;
+      blinkTimer = setTimeout(() => {
+        if (!animating) return;
+        if (!audio.paused && !audio.ended) {
+          isBlinking = true;
+          charaImg.src = 'chara_blink.png';
+          blinkResetTimer = setTimeout(() => {
+            isBlinking = false;
+            if (animating) charaImg.src = 'chara_close.png';
+            scheduleBlink();
+          }, 150); // 0.15秒だけ目を閉じる
+        } else {
+          scheduleBlink(); // 音声が止まっていても、次のまばたきを予約し続ける
+        }
+      }, nextBlink);
+    }
+    scheduleBlink();
+  }
+
+  function stopAnimations() {
+    animating = false;
+    isBlinking = false;
+    clearInterval(lipSyncTimer);
+    clearTimeout(blinkTimer);
+    clearTimeout(blinkResetTimer);
+  }
+
+  function goToQuiz() {
+    audio.pause();
+    stopAnimations();
+    window.location.href = 'greeting.html';  // 最初の画面へもどる
+  }
+
+  audio.addEventListener('ended', () => {
+    stopAnimations();
+    charaImg.src = 'chara_close.png';
+  });
+
+  skipBtn.addEventListener('click', goToQuiz);
+</script>
+
+</body>
+</html>

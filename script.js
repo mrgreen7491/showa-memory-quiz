@@ -830,6 +830,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // タイトル画面
   const btnStart = document.getElementById('btnStart');
+  const btnStartFrom11 = document.getElementById('btnStartFrom11');
+  const btnStartFrom21 = document.getElementById('btnStartFrom21');
 
   // クイズ画面
   const questionBadge = document.getElementById('questionBadge');
@@ -864,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const reminiscenceSpeechBtnText = document.getElementById('reminiscenceSpeechBtnText');
   const btnNext = document.getElementById('btnNext');
   const nextBtnText = document.getElementById('nextBtnText');
+  const btnStopHere = document.getElementById('btnStopHere');
 
   // 終了画面
   const btnSpeakEnding = document.getElementById('btnSpeakEnding');
@@ -983,6 +986,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSpeak.classList.remove('speaking');
     btnSpeakReminiscence.classList.remove('speaking');
     btnSpeakEnding.classList.remove('speaking');
+    speechBtnText.textContent = "問題の読み上げ原稿";
+    reminiscenceSpeechBtnText.textContent = "問いかけの言葉";
+    endingSpeechBtnText.textContent = "終了の言葉";
   }
 
   // ガイド表示関数
@@ -1158,6 +1164,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadQuestion(currentQuestionIndex);
   }
 
+  // 途中の問題から始める（第11問・第21問用）
+  function startQuizFrom(index) {
+    initAudioContext();
+    currentQuestionIndex = index;
+    showScreen(quizScreen);
+    loadQuestion(currentQuestionIndex);
+  }
+
   function loadQuestion(index) {
     isAnswered = false;
     stopAllAudio();
@@ -1208,6 +1222,11 @@ document.addEventListener('DOMContentLoaded', () => {
       nextBtnText.textContent = "昭和の旅を終える（終了）";
     } else {
       nextBtnText.textContent = "次の問題へすすむ";
+    }
+
+    // 第10問・第20問では「今日はここまで」ボタンを表示（お別れの挨拶へ）
+    if (btnStopHere) {
+      btnStopHere.style.display = (index === 9 || index === 19) ? '' : 'none';
     }
   }
 
@@ -1320,6 +1339,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   // スタートボタン
   btnStart.addEventListener('click', startQuiz);
+
+  // 第11問・第21問から始めるボタン
+  if (btnStartFrom11) btnStartFrom11.addEventListener('click', () => startQuizFrom(10));
+  if (btnStartFrom21) btnStartFrom21.addEventListener('click', () => startQuizFrom(20));
 
   // 問題文の読み上げ原稿 / 音声ボタン
   btnSpeak.addEventListener('click', () => {
