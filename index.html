@@ -6,6 +6,16 @@
   <title>昭和の思い出広場 Ver.2.1 - 高齢者向け懐かしのクイズ</title>
   <meta name="description" content="デイサービスやシニアサロンで楽しめる、昭和の思い出を語り合う温かいクイズアプリ（Ver.2.1）です。高知・四国と全国の懐かしい思い出30問を収録。">
   <link rel="stylesheet" href="style.css">
+  <!-- 再読み込み（リフレッシュ）したときは、挨拶画面（greeting.html）へ戻す -->
+  <script>
+    (function () {
+      try {
+        var nav = performance.getEntriesByType("navigation")[0];
+        var isReload = nav ? (nav.type === "reload") : (performance.navigation && performance.navigation.type === 1);
+        if (isReload) { location.replace("greeting.html"); }
+      } catch (e) { /* 判定できない場合は、何もしない */ }
+    })();
+  </script>
 </head>
 <body>
   <div class="app-container" id="app">
