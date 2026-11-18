@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     "id": 2,
     "genre": "高知・お城",
-    "question": "山内一豊（やまうちかつとよ）公が築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している高知のシンボルといえば？",
+    "question": "初代土佐藩主山内一豊が築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している高知のシンボルといえば？",
     "choices": [
       "松山城",
       "丸亀城",
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     "audioScripts": {
       "pronunciationGuide": "高知城（こうちじょう）、山内一豊（やまうち かつとよ）、追手門（おうてもん）",
-      "questionScript": "第2問。ジャンルは、高知のお城。やまうちかつとよ公が築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している、高知のシンボルといえば？……選択肢は、1番、松山城。2番、丸亀城。3番、高知城、です。",
+      "questionScript": "第2問。ジャンルは、高知のお城。初代土佐藩主、やまうちかつとよが築城し、全国で唯一、本丸の御殿や追手門などの建物がほぼ完全に現存している、高知のシンボルといえば？……選択肢は、1番、松山城。2番、丸亀城。3番、高知城、です。",
       "reminiscenceScript": "思い出の問いかけです。……高知城のお祭りやお花見に、ご家族やお友達とお出かけされたことはありますか？……どうぞ、昔の楽しい思い出をゆっくりお話ししてみてくださいね。"
     }
   },
@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     "genre": "高知・歴史の英雄",
     "question": "土佐藩出身で、海援隊を結成して薩長同盟を結ぶなど、明治維新の大きな原動力となった、土佐を代表する幕末の志士は誰でしょう？",
     "choices": [
-      "板垣退助",
-      "中岡慎太郎",
+      "牧野富太郎",
+      "ジョン万次郎",
       "坂本龍馬"
     ],
     "correctIndex": 2,
@@ -192,8 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
       "reminiscence": "audio/q07_reminiscence.wav"
     },
     "audioScripts": {
-      "pronunciationGuide": "坂本龍馬（さかもと りょうま）、海援隊（かいえんたい）、薩長同盟（さっちょう どうめい）",
-      "questionScript": "第7問。ジャンルは、高知・歴史の英雄。土佐藩出身で、かいえんたいを結成してさっちょうどうめいを結ぶなど、明治維新の原動力となった、土佐を代表する志士は誰でしょう？……選択肢は、1番、板垣退助。2番、中岡慎太郎。3番、坂本龍馬、です。",
+      "pronunciationGuide": "坂本龍馬（さかもと りょうま）、牧野富太郎（まきの とみたろう）、ジョン万次郎（じょん まんじろう）、海援隊（かいえんたい）、薩長同盟（さっちょう どうめい）",
+      "questionScript": "第7問。ジャンルは、高知・歴史の英雄。土佐藩出身で、かいえんたいを結成してさっちょうどうめいを結ぶなど、明治維新の原動力となった、土佐を代表する志士は誰でしょう？……選択肢は、1番、まきのとみたろう。2番、ジョン万次郎。3番、坂本龍馬、です。",
       "reminiscenceScript": "思い出の問いかけです。……龍馬さんのように、子どもの頃や若い頃に憧れた歴史の人物や物語はありますか？……どうぞ、思い出してみてくださいね。"
     }
   },
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     "id": 15,
     "genre": "高知・ふるさとの果物",
-    "question": "高知の早春から初夏にかけて出回り、皮をむくと爽やかで芳醇な香りが部屋中に広がる、大玉の黄色い柑橘といえば？",
+    "question": "高知の11月から早春にかけて出回り、皮をむくと爽やかで芳醇な香りが部屋中に広がる、大玉の黄色い柑橘といえば？",
     "choices": [
       "温州みかん",
       "リンゴ",
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     "audioScripts": {
       "pronunciationGuide": "土佐文旦（とさ ぶんたん）、柑橘（かんきつ）、芳醇（ほうじゅん）",
-      "questionScript": "第15問。ジャンルは、高知のふるさとの果物。高知の早春から初夏にかけて出回り、皮をむくと爽やかな香りが広がる、大玉の黄色い柑橘といえば？……選択肢は、1番、温州みかん。2番、リンゴ。3番、土佐文旦、です。",
+      "questionScript": "第15問。ジャンルは、高知のふるさとの果物。高知の11月から早春にかけて出回り、皮をむくと爽やかでほうじゅんな香りが部屋中に広がる、大玉の黄色い柑橘といえば？……選択肢は、1番、温州みかん。2番、リンゴ。3番、土佐文旦、です。",
       "reminiscenceScript": "思い出の問いかけです。……家族みんなでコタツや縁側に集まり、果物をむいて分け合って食べた団らんの思い出はありますか？……どうぞ、懐かしいご家族の思い出をお話ししてみてくださいね。"
     }
   },
@@ -512,26 +512,26 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     "id": 20,
     "genre": "懐かしの学校給食",
-    "question": "昔の学校給食で大人気だった、コッペパンを油でサッと揚げて、お砂糖やきな粉をたっぷりまぶした甘くて香ばしいパンといえば？",
+    "question": "昭和の学校給食の定番。素朴でどこか懐かしい、少し歯ごたえのある昔ながらの食感で、日本生まれのパンといえば？",
     "choices": [
-      "あげパン",
+      "コッペパン",
       "あんパン",
       "メロンパン"
     ],
     "correctIndex": 0,
-    "correctAnswer": "あげパン",
-    "explanation": "正解は「あげパン」です！口の周りにお砂糖をつけながら食べた、給食の日が待ち遠しくなる特別なメニューでした。",
+    "correctAnswer": "コッペパン",
+    "explanation": "正解は「コッペパン」です！昭和の給食でおなじみの、素朴でどこか懐かしいパンですね。",
     "reminiscence": "学校給食で好きだったメニューや、お母さんが作ってくれたお弁当のおかずは何ですか？",
-    "image": "images/q20_agepan.png",
-    "imageCaption": "アルマイトの食器に載ったお砂糖たっぷりの甘い「あげパン」と給食",
-    "imagePrompt": "Classic nostalgic Japanese school lunch from Showa era, golden fried bread (age-pan) coated with sugar on an aluminum tray, triangle milk carton, wooden school desk in sunlit classroom, warm nostalgic memories",
+    "image": "images/q20_koppepan.png",
+    "imageCaption": "給食の定番、素朴で懐かしい「コッペパン」のイラスト",
+    "imagePrompt": "Showa era school lunch koppe-pan, smooth light-brown soft oval bread roll, plain white background",
     "audioFiles": {
       "question": "audio/q20_question.wav",
       "reminiscence": "audio/q20_reminiscence.wav"
     },
     "audioScripts": {
-      "pronunciationGuide": "あげパン、コッペパン、給食（きゅうしょく）",
-      "questionScript": "第20問。ジャンルは、懐かしの学校給食。昔の学校給食で大人気だった、コッペパンを油で揚げて、お砂糖やきな粉をまぶした甘いパンといえば？……選択肢は、1番、あげパン。2番、あんパン。3番、メロンパン、です。",
+      "pronunciationGuide": "コッペパン、あんパン、メロンパン、給食（きゅうしょく）",
+      "questionScript": "第20問。ジャンルは、懐かしの学校給食。昭和の学校給食の定番。素朴でどこか懐かしい、少し歯ごたえのある昔ながらの食感で、日本生まれのパンといえば？……選択肢は、1番、コッペパン。2番、あんパン。3番、メロンパン、です。",
       "reminiscenceScript": "思い出の問いかけです。……学校給食で好きだったメニューや、お母さんが作ってくれたお弁当のおかずは何ですか？……どうぞ、懐かしいお味の思い出をお話ししてみてくださいね。"
     }
   },
@@ -947,6 +947,34 @@ document.addEventListener('DOMContentLoaded', () => {
     osc.stop(now + 0.55);
   }
 
+  // 正解・不正解の褒め声（audio/true.wav, audio/false.wav）：効果音の直後に鳴らす（全問共通）
+  let verdictTimer = null;
+  const CORRECT_VOICES = ['audio/true.wav', 'audio/true1.wav', 'audio/true2.wav']; // 正解の掛け声（ランダム）
+  const INCORRECT_VOICE = 'audio/false.wav';                                        // 不正解の掛け声（1種類）
+  let lastCorrectVoiceIndex = -1; // 同じ声が続けて出ないようにする
+  function pickCorrectVoice() {
+    let i;
+    do {
+      i = Math.floor(Math.random() * CORRECT_VOICES.length);
+    } while (CORRECT_VOICES.length > 1 && i === lastCorrectVoiceIndex);
+    lastCorrectVoiceIndex = i;
+    return CORRECT_VOICES[i];
+  }
+  function playVerdictVoice(isCorrect) {
+    if (!isSoundEnabled) return;
+    const delay = isCorrect ? 800 : 600; // 「ピンポーン」の余韻が終わるのを待つ（ミリ秒）
+    clearTimeout(verdictTimer);
+    verdictTimer = setTimeout(() => {
+      try {
+        const voice = new Audio(isCorrect ? pickCorrectVoice() : INCORRECT_VOICE);
+        currentAudio = voice;
+        voice.onended = () => { if (currentAudio === voice) currentAudio = null; };
+        const p = voice.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) { /* 音声が鳴らせなくても、クイズは続けられる */ }
+    }, delay);
+  }
+
   // 効果音ON/OFFトグル
   btnToggleSound.addEventListener('click', () => {
     isSoundEnabled = !isSoundEnabled;
@@ -975,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. 音声再生 & スタッフ読み上げガイドのハイブリッド制御
   // ==========================================
   function stopAllAudio() {
+    clearTimeout(verdictTimer);
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
@@ -1247,6 +1276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       playIncorrectSound();
     }
+    playVerdictVoice(isCorrect);
 
     // ボタンの無効化とスタイリング
     const choiceButtons = choicesContainer.querySelectorAll('.btn-choice');
