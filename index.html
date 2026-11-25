@@ -42,6 +42,9 @@
             <button type="button" class="btn-font" data-size="xlarge" aria-pressed="false">特大</button>
           </div>
 
+          <!-- スタッフ用：全画面表示ボタン（テレビ表示用） -->
+          <button type="button" id="btnFullscreen" class="btn-tool" aria-label="全画面表示">⛶ 全画面</button>
+
           <!-- 音声・運用設定ドロワーの開閉ボタン -->
           <button type="button" id="btnToggleSettings" class="btn-tool" aria-expanded="false" aria-controls="voiceSettingsPanel" aria-label="音声・運用設定を開く">
             <span class="tool-icon">⚙️</span>
@@ -261,5 +264,25 @@
   </div>
 
   <script src="script.js"></script>
+  <script>
+  /* スタッフ用 全画面ボタン */
+  (function(){
+    var b=document.getElementById('btnFullscreen'), de=document.documentElement;
+    if(!b) return;
+    if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled)){ b.style.display='none'; return; }
+    function isFS(){ return document.fullscreenElement||document.webkitFullscreenElement; }
+    function upd(){ b.textContent=isFS()?'✕ 全画面をやめる':'⛶ 全画面'; }
+    b.addEventListener('click',function(){
+      try{
+        if(isFS()){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+        else{ (de.requestFullscreen||de.webkitRequestFullscreen).call(de); }
+      }catch(err){}
+      b.blur();
+    });
+    document.addEventListener('fullscreenchange',upd);
+    document.addEventListener('webkitfullscreenchange',upd);
+    upd();
+  })();
+  </script>
 </body>
 </html>
