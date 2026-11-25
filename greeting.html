@@ -135,21 +135,28 @@
     startScreen.style.display = 'none';
     greetingArea.style.display = 'block';
 
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.3;  // 反応を速くする
-      source = audioCtx.createMediaElementSource(audio);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination);
+    // 口パク用の音量解析は、インターネット上（https）では使えますが、
+    // パソコンの中のファイルを直接開いた場合（file://）は、ブラウザの安全上の決まりで
+    // 音が消えてしまいます。そのため、file:// のときは解析を使わず、音をそのまま鳴らします。
+    if (!audioCtx && /^https?:$/.test(location.protocol)) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.3;  // 反応を速くする
+        source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+      } catch (e) {
+        audioCtx = null; analyser = null;  // 解析できなくても、音は鳴らす
+      }
     }
 
     // ブラウザが音声エンジンを止めている場合に再開する
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
     // 再生に失敗しても、スキップボタンは使えるようにする
-    audio.play().catch(() => {});
+    audio.play().catch((e) => { console.warn("再生できませんでした:", e); });
 
     startAnimations();
   });
@@ -158,10 +165,21 @@
     animating = true;
 
     // 1. 3段階口パク処理（0.09秒ごとに音量チェック）
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
     const N = 30;  // 人の声の帯域（約0〜5kHz）だけを見る
     lipSyncTimer = setInterval(() => {
       if (isBlinking) return; // まばたき中は目を閉じた画像を優先
+
+      // 解析が使えないとき（file:// で開いた確認用）は、音が鳴っている間、口を適当に動かす
+      if (!analyser) {
+        if (!audio.paused && !audio.ended) {
+          const r = Math.random();
+          charaImg.src = r > 0.66 ? 'chara_open.png' : (r > 0.33 ? 'chara_half.png' : 'chara_close.png');
+        } else {
+          charaImg.src = 'chara_close.png';
+        }
+        return;
+      }
 
       analyser.getByteFrequencyData(dataArray);
       let sum = 0;
@@ -223,5 +241,32 @@
   skipBtn.addEventListener('click', goToQuiz);
 </script>
 
+
+<!-- 全画面ボタン（スタッフ用・共通部品 v1） -->
+<style>
+#btnFullscreen{position:fixed;top:1.2vh;right:1.2vw;z-index:9999;font-family:inherit;font-size:max(13px,2.4vh);line-height:1.2;padding:.7vh 1.3vw;border-radius:1.2vh;border:.3vh solid rgba(60,40,20,.35);background:rgba(255,255,255,.82);color:#4a3a2a;opacity:.8;cursor:pointer;box-shadow:none}
+#btnFullscreen:hover,#btnFullscreen:focus-visible{opacity:1}
+</style>
+<button id="btnFullscreen" type="button" aria-label="全画面表示">⛶ 全画面</button>
+<script>
+(function(){
+  var b=document.getElementById('btnFullscreen'), de=document.documentElement;
+  var can=document.fullscreenEnabled||document.webkitFullscreenEnabled;
+  if(!can){ b.style.display='none'; return; }
+  function isFS(){ return document.fullscreenElement||document.webkitFullscreenElement; }
+  function upd(){ b.textContent=isFS()?'✕ 全画面をやめる':'⛶ 全画面'; }
+  b.addEventListener('click',function(e){
+    e.stopPropagation();
+    try{
+      if(isFS()){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+      else{ (de.requestFullscreen||de.webkitRequestFullscreen).call(de); }
+    }catch(err){}
+    b.blur();
+  });
+  document.addEventListener('fullscreenchange',upd);
+  document.addEventListener('webkitfullscreenchange',upd);
+  upd();
+})();
+</script>
 </body>
 </html>
